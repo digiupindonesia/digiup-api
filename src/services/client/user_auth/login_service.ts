@@ -9,7 +9,7 @@ export default async (data: any) => {
 
     // Check required user data
     if (!checkRequiredDatas(data))
-        return httpMsg.http422(constError.LOGIN_MSG.failToLogin, constError.ERROR_CODE.login);
+        return httpMsg.http422(constError.LOGIN_MSG.requiredFields, constError.ERROR_CODE.login);
 
     // Check existing user and get data
     const user = await getUser({
@@ -17,12 +17,12 @@ export default async (data: any) => {
         isDeleted: false,
         isRegistered: true,
     });
-    if (!user.success) return httpMsg.http401(constError.ERROR_CODE.login);
+    if (!user.success) return httpMsg.http401Custom(constError.LOGIN_MSG.userNotFound, constError.ERROR_CODE.login);
     console.log("masuk sini");
     
     // Check password
     const checkedPassword = await checkPassword(data.password, user.data.password);
-    if (!checkedPassword) return httpMsg.http401(constError.ERROR_CODE.login);
+    if (!checkedPassword) return httpMsg.http401Custom(constError.LOGIN_MSG.invalidPassword, constError.ERROR_CODE.login);
 
     // Generate token access
     const generatedToken = await generateToken(user.data);

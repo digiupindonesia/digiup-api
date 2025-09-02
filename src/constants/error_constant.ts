@@ -19,6 +19,10 @@ const REGISTER_CONFIRM_MSG = {
 
 const LOGIN_MSG = {
     failToLogin: 'Failed to authenticate',
+    invalidCredentials: 'Email atau password tidak valid',
+    userNotFound: 'Email tidak terdaftar atau akun tidak aktif',
+    invalidPassword: 'Password yang Anda masukkan salah',
+    requiredFields: 'Email dan password harus diisi',
 };
 
 const REQUEST_PASSWORD_MSG = {

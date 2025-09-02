@@ -31,6 +31,14 @@ export default {
         };
         return { httpStatusCode: 401, data: params };
     },
+    http401Custom(customMsg: string, error: any) {
+        const params = {
+            success: false,
+            message: customMsg || 'Acesso não autorizado',
+            error: error || null,
+        };
+        return { httpStatusCode: 401, data: params };
+    },
     http422(customMsg: string, error: any) {
         const params = {
             success: false,
