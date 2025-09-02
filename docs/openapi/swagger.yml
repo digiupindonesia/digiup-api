@@ -17,30 +17,35 @@ servers:
     description: Api Ver. 1
 components:
   securitySchemes:
-    noauthAuth:
-      type: http
-      scheme: noauth
     bearerAuth:
       type: http
       scheme: bearer
 tags:
-  - name: Api Info
-  - name: Api Logs
-  - name: Client
-  - name: Client > User
-  - name: Client > User > Auth
-  - name: Client > User > Auth > Register
-  - name: Client > User > Auth > Login
-  - name: Client > User > Auth > Forgot Password
-  - name: Client > User > Me
-  - name: Admin
-  - name: Admin > Users Management
+  - name: 📋 API Info & Health
+  - name: 👤 Client - Authentication
+  - name: 🔐 Client - Password Recovery
+  - name: 👥 Client - User Profile
+  - name: 🔧 Admin - User Management
+  - name: 📧 Development - Templates
+    description: Email and SMS templates (development only)
 paths:
+  /:
+    get:
+      tags:
+        - 📋 API Info & Health
+      summary: Root Endpoint
+      description: API root endpoint
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
   /info:
     get:
       tags:
-        - Api Info
-      summary: Info
+        - 📋 API Info & Health
+      summary: API Info
+      description: Get API information and status
       responses:
         '200':
           description: Successful response
@@ -49,8 +54,20 @@ paths:
   /logs:
     get:
       tags:
-        - Api Logs
-      summary: Logs
+        - 📋 API Info & Health
+      summary: API Logs
+      description: Get API logs (development only)
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /docs:
+    get:
+      tags:
+        - 📋 API Info & Health
+      summary: API Documentation
+      description: Swagger API documentation (development only)
       responses:
         '200':
           description: Successful response
@@ -59,20 +76,19 @@ paths:
   /client/auth/register:
     post:
       tags:
-        - Client > User > Auth > Register
-      summary: Register
+        - 👤 Client - Authentication
+      summary: Register User
+      description: Register a new user account
       requestBody:
         content:
           application/json:
             schema:
               type: object
               example:
-                email: vincent.queimado@gmail.com
-                name: vincent
-                phone: (81) 99999-9999
-                password: '1234'
-      security:
-        - noauthAuth: []
+                email: johndoe@sample.com
+                name: John Doe
+                phone: '081234567890'
+                password: Johndoe@1234
       parameters:
         - name: Content-Type
           in: header
@@ -87,24 +103,22 @@ paths:
   /client/auth/register/confirmation:
     get:
       tags:
-        - Client > User > Auth > Register
+        - 👤 Client - Authentication
       summary: Register Confirmation
+      description: Confirm user registration with email token
       parameters:
-        - name: Content-Type
-          in: header
-          schema:
-            type: string
-          example: application/json
         - name: email
           in: query
           schema:
             type: string
-          example: johndoe10@sample.com
+          description: User email
+          example: '{{user_email}}'
         - name: token
           in: query
           schema:
             type: string
-          example: 0D0G9ts1mX3Rdd6JbT2tzuiZ
+          description: Confirmation token from email
+          example: sample_token_here
       responses:
         '200':
           description: Successful response
@@ -113,8 +127,9 @@ paths:
   /client/auth/login:
     post:
       tags:
-        - Client > User > Auth > Login
+        - 👤 Client - Authentication
       summary: Login
+      description: Login user and get JWT token
       requestBody:
         content:
           application/json:
@@ -137,10 +152,57 @@ paths:
   /client/auth/logout:
     get:
       tags:
-        - Client > User > Auth > Login
+        - 👤 Client - Authentication
       summary: Logout
+      description: Logout user (requires authentication)
       security:
         - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /client/auth/google:
+    get:
+      tags:
+        - 👤 Client - Authentication
+      summary: Google OAuth URL
+      description: Get Google OAuth authorization URL
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /client/auth/google/callback:
+    get:
+      tags:
+        - 👤 Client - Authentication
+      summary: Google OAuth Callback
+      description: Handle Google OAuth callback with authorization code
+      parameters:
+        - name: code
+          in: query
+          schema:
+            type: string
+          description: Authorization code from Google OAuth
+          example: authorization_code_from_google
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /client/auth/google/token:
+    post:
+      tags:
+        - 👤 Client - Authentication
+      summary: Google OAuth Token
+      description: Authenticate with Google access token (for mobile apps)
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+              example: '"{\n    \"accessToken\": \"google_access_token_here\"\n}"'
       parameters:
         - name: Content-Type
           in: header
@@ -155,8 +217,9 @@ paths:
   /client/auth/forgotpassword/request:
     post:
       tags:
-        - Client > User > Auth > Forgot Password
-      summary: Request
+        - 🔐 Client - Password Recovery
+      summary: Forgot Password Request
+      description: Request password reset token
       requestBody:
         content:
           application/json:
@@ -178,8 +241,9 @@ paths:
   /client/auth/forgotpassword/reset:
     post:
       tags:
-        - Client > User > Auth > Forgot Password
-      summary: Reset
+        - 🔐 Client - Password Recovery
+      summary: Forgot Password Reset
+      description: Reset password with token
       requestBody:
         content:
           application/json:
@@ -187,8 +251,8 @@ paths:
               type: object
               example:
                 email: johndoe@sample.com
-                token: 0D0IB7oSsu4STEjsp5LjDtUj
-                password: Johndoe@1234
+                token: password_reset_token_here
+                password: NewPassword@1234
       parameters:
         - name: Content-Type
           in: header
@@ -203,16 +267,11 @@ paths:
   /client/user/me:
     get:
       tags:
-        - Client > User > Me
-      summary: Show Me
+        - 👥 Client - User Profile
+      summary: Get My Profile
+      description: Get current user profile information
       security:
         - bearerAuth: []
-      parameters:
-        - name: Content-Type
-          in: header
-          schema:
-            type: string
-          example: application/json
       responses:
         '200':
           description: Successful response
@@ -220,17 +279,20 @@ paths:
             application/json: {}
     patch:
       tags:
-        - Client > User > Me
-      summary: Update Me
+        - 👥 Client - User Profile
+      summary: Update My Profile
+      description: Update current user profile information
       requestBody:
         content:
           application/json:
             schema:
               type: object
               example:
-                name: johndoe
-                email: johndoe@sample.com
-                password: Johndoe@1234
+                name: John Doe Updated
+                phone: '081234567891'
+                avatar: https://example.com/avatar.jpg
+                accountName: John's Account
+                accountLocationState: Jakarta
       security:
         - bearerAuth: []
       parameters:
@@ -246,16 +308,11 @@ paths:
             application/json: {}
     delete:
       tags:
-        - Client > User > Me
-      summary: Delete Me
+        - 👥 Client - User Profile
+      summary: Delete My Account
+      description: Delete current user account
       security:
         - bearerAuth: []
-      parameters:
-        - name: Content-Type
-          in: header
-          schema:
-            type: string
-          example: application/json
       responses:
         '200':
           description: Successful response
@@ -264,8 +321,33 @@ paths:
   /admin/users:
     get:
       tags:
-        - Admin > Users Management
-      summary: All Users
+        - 🔧 Admin - User Management
+      summary: Get All Users
+      description: Get list of all users (admin access required)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /templates/email:
+    get:
+      tags:
+        - 📧 Development - Templates
+      summary: Email Templates
+      description: View email templates (development only)
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /templates/sms:
+    get:
+      tags:
+        - 📧 Development - Templates
+      summary: SMS Templates
+      description: View SMS templates (development only)
       responses:
         '200':
           description: Successful response

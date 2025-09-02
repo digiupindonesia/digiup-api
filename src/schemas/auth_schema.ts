@@ -68,7 +68,17 @@ export const forgotPasswordRequest = z.object({
     }),
 });
 
+export const googleAuthToken = z.object({
+    body: z.object({
+        code: z.string().min(1, {
+            message: 'Authorization code is required',
+        }),
+        state: z.string().optional(),
+    }),
+});
+
 export type loginType = z.infer<typeof login>;
 export type registerType = z.infer<typeof register>;
 export type registerConfirmationType = z.infer<typeof registerConfirmation>;
 export type forgotPasswordRequestType = z.infer<typeof forgotPasswordRequest>;
+export type googleAuthTokenType = z.infer<typeof googleAuthToken>;

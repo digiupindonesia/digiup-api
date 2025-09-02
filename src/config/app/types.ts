@@ -18,6 +18,7 @@ interface IApi {
     version: string;
     jsonLimit: string;
     extUrlencoded: boolean;
+    baseUrl: string;
 }
 
 interface IRatelimiter {
@@ -45,6 +46,12 @@ interface IDebug {
     http_connection: boolean;
 }
 
+interface IGoogleOauth {
+    clientId: string;
+    clientSecret: string;
+    redirectUri: string;
+}
+
 export interface IBaseConfig {
     nodeEnv: string;
     isTest: boolean;
@@ -62,6 +69,7 @@ export interface IEnvConfig {
     cors: ICors;
     bcrypt: IBcrypt;
     debug: IDebug;
+    googleOauth: IGoogleOauth;
 }
 
 export interface IConfig extends IBaseConfig, IEnvConfig {}

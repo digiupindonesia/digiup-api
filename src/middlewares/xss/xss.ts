@@ -17,9 +17,39 @@ const clean = <T>(data: T | string = ''): T => {
 
 const middleware = () => {
     return (req: Request, res: Response, next: NextFunction) => {
-        if (req.body) req.body = clean(req.body);
-        if (req.query) req.query = clean(req.query);
-        if (req.params) req.params = clean(req.params);
+        // Clean body
+        if (req.body) {
+            req.body = clean(req.body);
+        }
+        
+        // Clean query - create new object instead of modifying readonly property
+        if (req.query && Object.keys(req.query).length > 0) {
+            const cleanedQuery: any = {};
+            for (const [key, value] of Object.entries(req.query)) {
+                cleanedQuery[key] = clean(value as string);
+            }
+            Object.defineProperty(req, 'query', {
+                value: cleanedQuery,
+                writable: true,
+                enumerable: true,
+                configurable: true
+            });
+        }
+        
+        // Clean params - create new object instead of modifying readonly property
+        if (req.params && Object.keys(req.params).length > 0) {
+            const cleanedParams: any = {};
+            for (const [key, value] of Object.entries(req.params)) {
+                cleanedParams[key] = clean(value as string);
+            }
+            Object.defineProperty(req, 'params', {
+                value: cleanedParams,
+                writable: true,
+                enumerable: true,
+                configurable: true
+            });
+        }
+        
         next();
     };
 };

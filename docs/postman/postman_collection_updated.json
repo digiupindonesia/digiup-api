@@ -69,10 +69,10 @@
             ]
         },
         {
-            "name": "👤 Client - Authentication",
+            "name": "👤 Client - Manual Authentication",
             "item": [
                 {
-                    "name": "Register User",
+                    "name": "Register User (Manual)",
                     "event": [
                         {
                             "listen": "test",
@@ -105,23 +105,23 @@
                             }
                         },
                         "url": {
-                            "raw": "{{base_url}}/client/auth/register",
+                            "raw": "{{base_url}}/{{version}}/client/auth/register",
                             "host": ["{{base_url}}"],
-                            "path": ["client", "auth", "register"]
+                            "path": ["{{version}}", "client", "auth", "register"]
                         },
-                        "description": "Register a new user account"
+                        "description": "Register a new user account using manual method (email/password)"
                     },
                     "response": []
                 },
                 {
-                    "name": "Register Confirmation",
+                    "name": "Register Confirmation (Manual)",
                     "request": {
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{base_url}}/client/auth/register/confirmation?email={{user_email}}&token=sample_token_here",
+                            "raw": "{{base_url}}/{{version}}/client/auth/register/confirmation?email={{user_email}}&token=sample_token_here",
                             "host": ["{{base_url}}"],
-                            "path": ["client", "auth", "register", "confirmation"],
+                            "path": ["{{version}}", "client", "auth", "register", "confirmation"],
                             "query": [
                                 {
                                     "key": "email",
@@ -135,12 +135,12 @@
                                 }
                             ]
                         },
-                        "description": "Confirm user registration with email token"
+                        "description": "Confirm user registration with email token (manual method)"
                     },
                     "response": []
                 },
                 {
-                    "name": "Login",
+                    "name": "Login (Manual)",
                     "event": [
                         {
                             "listen": "test",
@@ -176,16 +176,16 @@
                             }
                         },
                         "url": {
-                            "raw": "{{base_url}}/client/auth/login",
+                            "raw": "{{base_url}}/{{version}}/client/auth/login",
                             "host": ["{{base_url}}"],
-                            "path": ["client", "auth", "login"]
+                            "path": ["{{version}}", "client", "auth", "login"]
                         },
-                        "description": "Login user and get JWT token"
+                        "description": "Login user using manual method (email/password) and get JWT token"
                     },
                     "response": []
                 },
                 {
-                    "name": "Logout",
+                    "name": "Logout (Both Manual & Google)",
                     "request": {
                         "auth": {
                             "type": "bearer",
@@ -200,23 +200,101 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{base_url}}/client/auth/logout",
+                            "raw": "{{base_url}}/{{version}}/client/auth/logout",
                             "host": ["{{base_url}}"],
-                            "path": ["client", "auth", "logout"]
+                            "path": ["{{version}}", "client", "auth", "logout"]
                         },
-                        "description": "Logout user (requires authentication)"
+                        "description": "Logout user (works for both manual and Google authentication)"
                     },
                     "response": []
                 },
                 {
-                    "name": "Google OAuth URL",
+                    "name": "Forgot Password Request",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"johndoe@sample.com\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/{{version}}/client/auth/forgotpassword/request",
+                            "host": ["{{base_url}}"],
+                            "path": ["{{version}}", "client", "auth", "forgotpassword", "request"]
+                        },
+                        "description": "Request password reset token (manual auth only)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Forgot Password Reset",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"johndoe@sample.com\",\n    \"token\": \"password_reset_token_here\",\n    \"password\": \"NewPassword@1234\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/{{version}}/client/auth/forgotpassword/reset",
+                            "host": ["{{base_url}}"],
+                            "path": ["{{version}}", "client", "auth", "forgotpassword", "reset"]
+                        },
+                        "description": "Reset password with token (manual auth only)"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "🔐 Client - Google OAuth Authentication",
+            "item": [
+                {
+                    "name": "Get Google OAuth URL",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    if (jsonData.content && jsonData.content.authUrl) {",
+                                    "        pm.environment.set('google_auth_url', jsonData.content.authUrl);",
+                                    "        console.log('Google Auth URL:', jsonData.content.authUrl);",
+                                    "    }",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
                     "request": {
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{base_url}}/client/auth/google",
+                            "raw": "{{base_url}}/{{version}}/client/auth/google",
                             "host": ["{{base_url}}"],
-                            "path": ["client", "auth", "google"]
+                            "path": ["{{version}}", "client", "auth", "google"]
                         },
                         "description": "Get Google OAuth authorization URL"
                     },
@@ -228,31 +306,39 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{base_url}}/client/auth/google/callback?code=authorization_code_from_google",
+                            "raw": "{{base_url}}/{{version}}/client/auth/google/callback?code=google_auth_code_here&state=optional_state",
                             "host": ["{{base_url}}"],
-                            "path": ["client", "auth", "google", "callback"],
+                            "path": ["{{version}}", "client", "auth", "google", "callback"],
                             "query": [
                                 {
                                     "key": "code",
-                                    "value": "authorization_code_from_google",
-                                    "description": "Authorization code from Google OAuth"
+                                    "value": "google_auth_code_here",
+                                    "description": "Authorization code from Google"
+                                },
+                                {
+                                    "key": "state",
+                                    "value": "optional_state",
+                                    "description": "Optional state parameter"
                                 }
                             ]
                         },
-                        "description": "Handle Google OAuth callback with authorization code"
+                        "description": "Handle Google OAuth callback (usually called by Google automatically)"
                     },
                     "response": []
                 },
                 {
-                    "name": "Google OAuth Token",
+                    "name": "Login with Google Token",
                     "event": [
                         {
                             "listen": "test",
                             "script": {
                                 "exec": [
-                                    "var jsonData = pm.response.json();",
-                                    "if (jsonData.success && jsonData.data && jsonData.data.token) {",
-                                    "    pm.environment.set(\"auth_token\", jsonData.data.token);",
+                                    "if (pm.response.code === 200) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    if (jsonData.content && jsonData.content.token) {",
+                                    "        pm.environment.set('auth_token', jsonData.content.token);",
+                                    "        console.log('Google Auth Token saved:', jsonData.content.token);",
+                                    "    }",
                                     "}"
                                 ],
                                 "type": "text/javascript"
@@ -269,21 +355,100 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"accessToken\": \"google_access_token_here\"\n}"
+                            "raw": "{\n    \"code\": \"google_auth_code_here\",\n    \"state\": \"optional_state\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         },
                         "url": {
-                            "raw": "{{base_url}}/client/auth/google/token",
+                            "raw": "{{base_url}}/{{version}}/client/auth/google/token",
                             "host": ["{{base_url}}"],
-                            "path": ["client", "auth", "google", "token"]
+                            "path": ["{{version}}", "client", "auth", "google", "token"]
                         },
-                        "description": "Authenticate with Google access token (for mobile apps)"
+                        "description": "Step 3: Exchange Google authorization code for JWT token. Get the 'code' from Step 2 (Google OAuth callback URL) and use it here. Do NOT use GOOGLE_CLIENT_SECRET - that's server-side only!"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Register with Google Token",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    if (jsonData.content && jsonData.content.token) {",
+                                    "        pm.environment.set('auth_token', jsonData.content.token);",
+                                    "        console.log('Google Register Token saved:', jsonData.content.token);",
+                                    "    }",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"google_auth_code_here\",\n    \"state\": \"optional_state\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/{{version}}/client/auth/google/register",
+                            "host": ["{{base_url}}"],
+                            "path": ["{{version}}", "client", "auth", "google", "register"]
+                        },
+                        "description": "Register new user using Google OAuth token"
                     },
                     "response": []
                 }
             ]
         },
         {
-            "name": "🔐 Client - Password Recovery",
+            "name": "� Client - Common Authentication",
+            "item": [
+                {
+                    "name": "Logout",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{auth_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/{{version}}/client/auth/logout",
+                            "host": ["{{base_url}}"],
+                            "path": ["{{version}}", "client", "auth", "logout"]
+                        },
+                        "description": "Logout user (works for both manual and Google auth)"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "�🔐 Client - Password Recovery",
             "item": [
                 {
                     "name": "Forgot Password Request",
@@ -305,9 +470,9 @@
                             }
                         },
                         "url": {
-                            "raw": "{{base_url}}/client/auth/forgotpassword/request",
+                            "raw": "{{base_url}}/{{version}}/client/auth/forgotpassword/request",
                             "host": ["{{base_url}}"],
-                            "path": ["client", "auth", "forgotpassword", "request"]
+                            "path": ["{{version}}", "client", "auth", "forgotpassword", "request"]
                         },
                         "description": "Request password reset token"
                     },
@@ -333,11 +498,11 @@
                             }
                         },
                         "url": {
-                            "raw": "{{base_url}}/client/auth/forgotpassword/reset",
+                            "raw": "{{base_url}}/{{version}}/client/auth/manual/forgotpassword/reset",
                             "host": ["{{base_url}}"],
-                            "path": ["client", "auth", "forgotpassword", "reset"]
+                            "path": ["{{version}}", "client", "auth", "manual", "forgotpassword", "reset"]
                         },
-                        "description": "Reset password with token"
+                        "description": "Reset password with token (manual auth only)"
                     },
                     "response": []
                 }
@@ -362,9 +527,9 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{base_url}}/client/user/me",
+                            "raw": "{{base_url}}/{{version}}/client/user/me",
                             "host": ["{{base_url}}"],
-                            "path": ["client", "user", "me"]
+                            "path": ["{{version}}", "client", "user", "me"]
                         },
                         "description": "Get current user profile information"
                     },
@@ -400,9 +565,9 @@
                             }
                         },
                         "url": {
-                            "raw": "{{base_url}}/client/user/me",
+                            "raw": "{{base_url}}/{{version}}/client/user/me",
                             "host": ["{{base_url}}"],
-                            "path": ["client", "user", "me"]
+                            "path": ["{{version}}", "client", "user", "me"]
                         },
                         "description": "Update current user profile information"
                     },
@@ -424,9 +589,9 @@
                         "method": "DELETE",
                         "header": [],
                         "url": {
-                            "raw": "{{base_url}}/client/user/me",
+                            "raw": "{{base_url}}/{{version}}/client/user/me",
                             "host": ["{{base_url}}"],
-                            "path": ["client", "user", "me"]
+                            "path": ["{{version}}", "client", "user", "me"]
                         },
                         "description": "Delete current user account"
                     },

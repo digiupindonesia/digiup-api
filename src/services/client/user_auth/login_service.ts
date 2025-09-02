@@ -18,7 +18,8 @@ export default async (data: any) => {
         isRegistered: true,
     });
     if (!user.success) return httpMsg.http401(constError.ERROR_CODE.login);
-
+    console.log("masuk sini");
+    
     // Check password
     const checkedPassword = await checkPassword(data.password, user.data.password);
     if (!checkedPassword) return httpMsg.http401(constError.ERROR_CODE.login);

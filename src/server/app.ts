@@ -50,8 +50,8 @@ export default () => {
 
     app.use(baseApiUrl + '/logs', express.static(publicLogs, { dotfiles: 'allow' }));
     app.use(baseApiUrl + '/', routes);
-    app.use(baseApiUrl + '/client/', routesUser);
-    app.use(baseApiUrl + '/admin/', routesAdmin);
+    app.use(baseApiUrl + '/' + config.api.version + '/client/', routesUser);
+    app.use(baseApiUrl + '/' + config.api.version + '/admin/', routesAdmin);
 
     app.set('view engine', 'ejs');
     app.set('views', path.join(__dirname, views));
