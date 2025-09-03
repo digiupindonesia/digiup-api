@@ -16,38 +16,30 @@ export default async (data: any) => {
     let registeredUser;
 
     // Check required user datas
-    if (!checkRequiredDatas(data))
+    const requiredCheck = checkRequiredDatas(data);
+    if (!requiredCheck.success)
         return httpMsg.http422(
-            constError.REGISTER_ERROR_MSG.failToRegister,
+            requiredCheck.error || constError.REGISTER_ERROR_MSG.missingRequiredFields,
             constError.ERROR_CODE.register,
         );
 
-    // Check existing user and get data
-    const user = await getUsr({ email: data.email });
-    if (!user.success) return httpMsg.http422(user.error || '', constError.ERROR_CODE.register);
+    // Check existing user by email
+    const existingUserByEmail = await getUserByEmail({ email: data.email });
+    if (!existingUserByEmail.success) return httpMsg.http422(existingUserByEmail.error || '', constError.ERROR_CODE.register);
 
-    // If user exist but is not registered: update user
-    if (user.data && !user.data.isRegistered) {
-        data.isDeleted = false;
-        const updatedUser = await updateUsr(user.data.id, data);
-        if (!updatedUser.success)
-            return httpMsg.http422(
-                constError.REGISTER_ERROR_MSG.failToRegister,
-                constError.ERROR_CODE.register,
-            );
-        registeredUser = updatedUser.data;
-    }
+    // Check existing user by phone (WhatsApp)
+    const existingUserByPhone = await getUserByPhone({ phone: data.phone });
+    if (!existingUserByPhone.success) return httpMsg.http422(existingUserByPhone.error || '', constError.ERROR_CODE.register);
 
-    // If user not exist: create new user
-    if (!user.data) {
-        const createdUser = await createUsr(data);
-        if (!createdUser.success)
-            return httpMsg.http422(
-                constError.REGISTER_ERROR_MSG.failToRegister,
-                constError.ERROR_CODE.register,
-            );
-        registeredUser = createdUser.data;
-    }
+    // Create new user with isRegistered = true
+    data.isRegistered = true; // Set langsung ke true untuk register manual
+    const createdUser = await createUsr(data);
+    if (!createdUser.success)
+        return httpMsg.http422(
+            constError.REGISTER_ERROR_MSG.serverError,
+            constError.ERROR_CODE.register,
+        );
+    registeredUser = createdUser.data;
     // Delete some user datas
     delete registeredUser.tokenOfRegisterConfirmation;
 
@@ -56,7 +48,7 @@ export default async (data: any) => {
         const sended = await sendEmail(registeredUser);
         if (!sended)
             return httpMsg.http422(
-                constError.REGISTER_ERROR_MSG.failToRegister,
+                'Failed to send welcome email!',
                 constError.ERROR_CODE.register,
             );
         registeredUser.isEmailNotif = constEmail.IS_NOTIFICATE.welcome;
@@ -67,12 +59,23 @@ export default async (data: any) => {
 };
 
 const checkRequiredDatas = (datas: any) => /* istanbul ignore next */ {
-    if (!datas.email) return false;
-    if (!datas.name) return false;
-    if (!datas.phone) return false;
-    if (!datas.password) return false;
+    if (!datas.email) return { success: false, error: 'Email is required!' };
+    if (!datas.name) return { success: false, error: 'Name is required!' };
+    if (!datas.phone) return { success: false, error: 'Phone number is required!' };
+    if (!datas.password) return { success: false, error: 'Password is required!' };
 
-    return true;
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(datas.email)) {
+        return { success: false, error: constError.REGISTER_ERROR_MSG.invalidEmail };
+    }
+
+    // Basic password validation
+    if (datas.password.length < 6) {
+        return { success: false, error: constError.REGISTER_ERROR_MSG.weakPassword };
+    }
+
+    return { success: true, error: null };
 };
 
 const getUsr = async (where: object) => {
@@ -113,13 +116,66 @@ const getUsr = async (where: object) => {
     return { success: true, data: result.data, error: null };
 };
 
+const getUserByEmail = async (where: object) => {
+    const select = {
+        id: true,
+        email: true,
+        isRegistered: true,
+    };
+
+    // Get user by email
+    const result = await findOneUser(where, select);
+
+    // Check if email already exists
+    if (!result.success)
+        return { success: false, data: null, error: constError.REGISTER_ERROR_MSG.serverError };
+    
+    if (result.data && result.data.isRegistered) {
+        return {
+            success: false,
+            data: null,
+            error: constError.REGISTER_ERROR_MSG.emailAlreadyRegistered,
+        };
+    }
+
+    return { success: true, data: result.data, error: null };
+};
+
+const getUserByPhone = async (where: object) => {
+    const select = {
+        id: true,
+        phone: true,
+        isRegistered: true,
+    };
+
+    // Get user by phone
+    const result = await findOneUser(where, select);
+
+    // Check if phone already exists
+    if (!result.success)
+        return { success: false, data: null, error: constError.REGISTER_ERROR_MSG.serverError };
+    
+    if (result.data && result.data.isRegistered) {
+        return {
+            success: false,
+            data: null,
+            error: constError.REGISTER_ERROR_MSG.phoneAlreadyRegistered,
+        };
+    }
+
+    return { success: true, data: result.data, error: null };
+};
+
 const createUsr = async (datas: any) => {
     const select = {
+        id: true,
         name: true,
         email: true,
         phone: true,
-        tokenOfRegisterConfirmation: true,
+        avatar: true,
+        isRegistered: true,
         createdAt: true,
+        updatedAt: true,
     };
 
     // Hash user password
@@ -131,6 +187,9 @@ const createUsr = async (datas: any) => {
     // Create user tokens
     datas.tokenOfRegisterConfirmation = randtoken.suid(16);
     datas.tokenOfResetPassword = randtoken.suid(16);
+    
+    // Set isRegistered = true for manual registration
+    datas.isRegistered = true;
 
     // Create user
     const created = await createUser(datas, select);

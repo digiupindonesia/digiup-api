@@ -11,6 +11,12 @@ const REGISTER_ERROR_MSG = {
     failToDeleted: 'Failed to register a deleted user',
     failToDisabled: 'Failed to register a disabled user',
     AlreadyRegistered: 'Failed to register an already registered user',
+    emailAlreadyRegistered: 'Email already registered!',
+    phoneAlreadyRegistered: 'Phone already registered!',
+    missingRequiredFields: 'Missing required fields!',
+    invalidEmail: 'Invalid email format!',
+    weakPassword: 'Password too weak!',
+    serverError: 'Server error during registration!',
 };
 
 const REGISTER_CONFIRM_MSG = {

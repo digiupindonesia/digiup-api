@@ -98,20 +98,23 @@ const googleAuthCallback = (req: Request, res: Response, next: NextFunction): vo
         .authenticateWithCode(code)
         .then((result) => {
             if (result.success) {
+                // Format response sama dengan login endpoint
+                const responseData = {
+                    id: result.user!.id,
+                    name: result.user!.name,
+                    email: result.user!.email,
+                    phone: result.user!.phone || null,
+                    avatar: result.user!.avatar || result.user!.google_avatar || null,
+                    isVerified: result.user!.isRegistered,
+                    createdAt: result.user!.createdAt ? result.user!.createdAt.toISOString() : undefined,
+                    updatedAt: result.user!.updatedAt ? result.user!.updatedAt.toISOString() : undefined,
+                    token: result.token
+                };
+
                 res.status(200).json({
                     success: true,
                     message: result.message,
-                    data: {
-                        user: {
-                            id: result.user!.id,
-                            email: result.user!.email,
-                            name: result.user!.name,
-                            google_signin: result.user!.google_signin,
-                            isRegistered: result.user!.isRegistered
-                        },
-                        token: result.token,
-                        isNewUser: result.isNewUser
-                    }
+                    content: responseData
                 });
             } else {
                 res.status(400).json({
@@ -144,20 +147,23 @@ const googleAuthToken = (req: Request, res: Response, next: NextFunction): void 
         .authenticateWithCode(code)
         .then((result) => {
             if (result.success) {
+                // Format response sama dengan login endpoint
+                const responseData = {
+                    id: result.user!.id,
+                    name: result.user!.name,
+                    email: result.user!.email,
+                    phone: result.user!.phone || null,
+                    avatar: result.user!.avatar || result.user!.google_avatar || null,
+                    isVerified: result.user!.isRegistered,
+                    createdAt: result.user!.createdAt ? result.user!.createdAt.toISOString() : undefined,
+                    updatedAt: result.user!.updatedAt ? result.user!.updatedAt.toISOString() : undefined,
+                    token: result.token
+                };
+
                 res.status(200).json({
                     success: true,
                     message: result.message,
-                    data: {
-                        user: {
-                            id: result.user!.id,
-                            email: result.user!.email,
-                            name: result.user!.name,
-                            google_signin: result.user!.google_signin,
-                            isRegistered: result.user!.isRegistered
-                        },
-                        token: result.token,
-                        isNewUser: result.isNewUser
-                    }
+                    content: responseData
                 });
             } else {
                 res.status(400).json({

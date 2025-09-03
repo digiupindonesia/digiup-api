@@ -28,10 +28,16 @@ export default async (data: any) => {
     const generatedToken = await generateToken(user.data);
     if (!generatedToken.success) return httpMsg.http401(constError.ERROR_CODE.login);
 
-    // User data
+    // User data - format sesuai requirement
     userLogged = {
-        email: user.data.email,
+        id: user.data.id,
         name: user.data.name,
+        email: user.data.email,
+        phone: user.data.phone,
+        avatar: user.data.avatar,
+        isVerified: user.data.isRegistered, // isVerified menggunakan isRegistered
+        createdAt: user.data.createdAt ? user.data.createdAt.toISOString() : undefined,
+        updatedAt: user.data.updatedAt ? user.data.updatedAt.toISOString() : undefined,
         token: generatedToken.data,
     };
 
@@ -51,7 +57,12 @@ const getUser = async (where: object) => {
         id: true,
         name: true,
         email: true,
+        phone: true,
+        avatar: true,
         password: true,
+        isRegistered: true,
+        createdAt: true,
+        updatedAt: true,
     };
 
     // Get user by email
@@ -59,9 +70,9 @@ const getUser = async (where: object) => {
 
     // Check user status
     if (!result.success || !result.data)
-        return { success: false, data: null, error: constError.LOGIN_MSG.failToLogin };
+        return { success: false, data: null, error: constError.LOGIN_MSG.userNotFound };
     if (!result.data.password)
-        return { success: false, data: null, error: constError.LOGIN_MSG.failToLogin }; // Need to have a password
+        return { success: false, data: null, error: constError.LOGIN_MSG.userNotFound }; // Need to have a password
 
     return { success: true, data: result.data, error: null };
 };
