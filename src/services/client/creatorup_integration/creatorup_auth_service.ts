@@ -1,7 +1,7 @@
 import axios from 'axios';
 import logger from '@utils/logger/winston/logger';
 
-const CREATORUP_BASE_URL = 'http://localhost:3000/api/v1';
+const CREATORUP_BASE_URL = 'https://api.staging.creatorup.id/api/v1';
 
 interface CreatorUpRegisterPayload {
     username: string;
