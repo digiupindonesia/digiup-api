@@ -6,7 +6,7 @@ import ctrlSyncAnalytics from '@controllers/admin/analytics/sync_analytics_contr
 const router = Router();
 
 // All routes require admin authentication
-router.use(auth('jwt-admin'));
+router.use(auth('jwt-user'));
 
 // Sync Analytics Routes
 router.get('/sync', ctrlSyncAnalytics.getSyncAnalytics);
