@@ -3,7 +3,13 @@ import { Router } from 'express';
 import auth from '@middlewares/auth/authenticate';
 import ctrlUserAuth from '@controllers/client/users_auth_controller';
 
-import { register, login, forgotPasswordRequest, registerConfirmation, googleAuthToken } from '@schemas/auth_schema';
+import {
+    register,
+    login,
+    forgotPasswordRequest,
+    registerConfirmation,
+    googleAuthToken,
+} from '@schemas/auth_schema';
 import { validate } from '@middlewares/validate_schema/validate_schema';
 
 const router = Router();

@@ -1,355 +1,3119 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
-  title: express-prisma-ts-boilerplate
-  description: >-
-    A starter project written in TypeScript for quickly building Express RESTful
-    APIs using ORM, loggers, schema validator, authentication, unit test
-    coverage, and much more.
-  version: 1.0.1
-  contact:
-    name: Vincent Jean
-    email: vincent.queimado@gmail.com
-  license:
-    name: ISC
-    url: https://github.com/vincent-queimado
+    title: DigiUp API
+    description: |
+        Comprehensive REST API untuk platform DigiUp yang menyediakan layanan integrasi aplikasi digital, 
+        manajemen pengguna, sistem membership, dan integrasi dengan CreatorUp.
+
+        **Fitur Utama:**
+        - Sistem autentikasi pengguna dengan dukungan OAuth Google
+        - Manajemen aplikasi dan pricing plans
+        - Sistem membership dan subscription
+        - Integrasi real-time dengan CreatorUp
+        - Tracking penggunaan batch dan analytics
+        - Webhook support untuk sinkronisasi data
+    version: 1.0.1
+    contact:
+        name: DigiUp API Support
+        email: support@digiup.com
+    license:
+        name: ISC License
 servers:
-  - url: /api/
-    description: Api Ver. 1
+    - url: http://localhost:3345
+      description: Development server (Default)
+    - url: https://staging-api.digiup.com
+      description: Staging server
+    - url: https://api.digiup.com
+      description: Production server
+
+# Security schemes
 components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-tags:
-  - name: 📋 API Info & Health
-  - name: 👤 Client - Authentication
-  - name: 🔐 Client - Password Recovery
-  - name: 👥 Client - User Profile
-  - name: 🔧 Admin - User Management
-  - name: 📧 Development - Templates
-    description: Email and SMS templates (development only)
+    securitySchemes:
+        BearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+            description: JWT token yang diperoleh dari endpoint login
+        AdminAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+            description: JWT token untuk admin yang diperoleh dari admin login
+
+    # Response schemas
+    schemas:
+        # Standard API Response Schemas
+        SuccessResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                    example: true
+                message:
+                    type: string
+                    example: 'Success'
+                content:
+                    type: object
+                    description: 'Data yang dikembalikan oleh endpoint'
+
+        ErrorResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                    example: false
+                message:
+                    type: string
+                    example: 'Error occurred'
+                error:
+                    type: string
+                    example: 'ERROR_CODE'
+
+        # User-related schemas
+        User:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                    example: '123e4567-e89b-12d3-a456-426614174000'
+                email:
+                    type: string
+                    format: email
+                    example: 'user@example.com'
+                name:
+                    type: string
+                    example: 'John Doe'
+                phone:
+                    type: string
+                    example: '+6281234567890'
+                avatar:
+                    type: string
+                    nullable: true
+                    example: 'https://example.com/avatar.jpg'
+                accountType:
+                    type: string
+                    enum: [free, premium, enterprise]
+                    example: 'free'
+                isVerified:
+                    type: boolean
+                    example: true
+                google_signin:
+                    type: boolean
+                    example: false
+                createdAt:
+                    type: string
+                    format: date-time
+                    example: '2024-01-01T00:00:00.000Z'
+                updatedAt:
+                    type: string
+                    format: date-time
+                    example: '2024-01-01T00:00:00.000Z'
+
+        UserRegistration:
+            type: object
+            required: [email, name, phone, password]
+            properties:
+                email:
+                    type: string
+                    format: email
+                    example: 'user@example.com'
+                    description: 'Email address yang valid dan unik'
+                name:
+                    type: string
+                    minLength: 3
+                    maxLength: 32
+                    example: 'John Doe'
+                    description: 'Nama lengkap pengguna'
+                phone:
+                    type: string
+                    minLength: 11
+                    maxLength: 15
+                    example: '+6281234567890'
+                    description: 'Nomor telefon yang valid'
+                password:
+                    type: string
+                    minLength: 4
+                    maxLength: 16
+                    example: 'password123'
+                    description: 'Password dengan minimal 4 karakter'
+
+        UserLogin:
+            type: object
+            required: [email, password]
+            properties:
+                email:
+                    type: string
+                    format: email
+                    example: 'user@example.com'
+                password:
+                    type: string
+                    minLength: 4
+                    maxLength: 16
+                    example: 'password123'
+
+        LoginResponse:
+            allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                      content:
+                          type: object
+                          properties:
+                              id:
+                                  type: string
+                                  format: uuid
+                              name:
+                                  type: string
+                              email:
+                                  type: string
+                              phone:
+                                  type: string
+                              avatar:
+                                  type: string
+                                  nullable: true
+                              isVerified:
+                                  type: boolean
+                              createdAt:
+                                  type: string
+                                  format: date-time
+                              updatedAt:
+                                  type: string
+                                  format: date-time
+                              token:
+                                  type: string
+                                  description: 'JWT token untuk autentikasi'
+
+        # App-related schemas
+        DigiupApp:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                    example: '123e4567-e89b-12d3-a456-426614174000'
+                name:
+                    type: string
+                    example: 'Video Editor Pro'
+                description:
+                    type: string
+                    example: 'Advanced video editing application with AI features'
+                logo:
+                    type: string
+                    nullable: true
+                    example: 'https://example.com/logo.jpg'
+                category:
+                    type: string
+                    enum: [Creation, Automation, Analytics, Collaboration]
+                    example: 'Creation'
+                status:
+                    type: string
+                    enum: [active, inactive, coming_soon]
+                    example: 'active'
+                appUrl:
+                    type: string
+                    nullable: true
+                    example: 'https://videoeditor.digiup.com'
+                features:
+                    type: array
+                    items:
+                        type: object
+                    example:
+                        [{ 'name': 'AI Editing', 'description': 'Automatic video editing with AI' }]
+                tags:
+                    type: array
+                    items:
+                        type: string
+                    example: ['video', 'editing', 'ai']
+                isEarlyAccess:
+                    type: boolean
+                    example: false
+                sortOrder:
+                    type: integer
+                    example: 1
+                isActive:
+                    type: boolean
+                    example: true
+                createdAt:
+                    type: string
+                    format: date-time
+                updatedAt:
+                    type: string
+                    format: date-time
+
+        CreateAppRequest:
+            type: object
+            required: [name, description, category]
+            properties:
+                name:
+                    type: string
+                    example: 'Video Editor Pro'
+                description:
+                    type: string
+                    example: 'Advanced video editing application'
+                logo:
+                    type: string
+                    example: 'https://example.com/logo.jpg'
+                category:
+                    type: string
+                    enum: [Creation, Automation, Analytics, Collaboration]
+                    example: 'Creation'
+                status:
+                    type: string
+                    enum: [active, inactive, coming_soon]
+                    default: 'active'
+                appUrl:
+                    type: string
+                    example: 'https://app.digiup.com'
+                features:
+                    type: array
+                    items:
+                        type: object
+                tags:
+                    type: array
+                    items:
+                        type: string
+                    example: ['video', 'editing']
+                isEarlyAccess:
+                    type: boolean
+                    default: false
+                sortOrder:
+                    type: integer
+                    default: 0
+
+        # Membership and Subscription schemas
+        MembershipPlan:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    example: 1
+                name:
+                    type: string
+                    example: 'Premium Plan'
+                price:
+                    type: integer
+                    example: 99000
+                    description: 'Harga dalam rupiah'
+                currency:
+                    type: string
+                    example: 'IDR'
+                local_rendering_limit:
+                    type: integer
+                    nullable: true
+                    example: 100
+                    description: 'Batas rendering lokal, null berarti unlimited'
+                device_limit:
+                    type: integer
+                    example: 3
+                video_quality:
+                    type: string
+                    enum: [low, medium, high, ultra]
+                    example: 'high'
+                has_ai_subtitle:
+                    type: boolean
+                    example: true
+                has_ai_voiceover:
+                    type: boolean
+                    example: true
+                ai_voiceover_limit:
+                    type: integer
+                    nullable: true
+                    example: 1000
+                support_level:
+                    type: string
+                    enum: [none, basic, priority]
+                    example: 'priority'
+                is_active:
+                    type: boolean
+                    example: true
+
+        AppPricingPlan:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                appId:
+                    type: string
+                    format: uuid
+                name:
+                    type: string
+                    example: 'Pro Plan'
+                price:
+                    type: integer
+                    example: 50000
+                    description: 'Harga dalam rupiah'
+                currency:
+                    type: string
+                    example: 'IDR'
+                billingCycle:
+                    type: string
+                    enum: [monthly, yearly, one_time]
+                    example: 'monthly'
+                isFree:
+                    type: boolean
+                    example: false
+                features:
+                    type: object
+                    example: { 'max_projects': 10, 'ai_features': true }
+                limits:
+                    type: object
+                    example: { 'api_calls_per_month': 10000 }
+                isActive:
+                    type: boolean
+                    example: true
+
+        # Batch and Usage schemas
+        BatchUsage:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                userId:
+                    type: string
+                    format: uuid
+                appId:
+                    type: string
+                    format: uuid
+                    nullable: true
+                batchName:
+                    type: string
+                    example: 'Video Processing Batch #1'
+                batchType:
+                    type: string
+                    example: 'video_processing'
+                usageType:
+                    type: string
+                    example: 'rendering'
+                usageAmount:
+                    type: integer
+                    example: 5
+                monthYear:
+                    type: string
+                    example: '2024-01'
+                completedAt:
+                    type: string
+                    format: date-time
+                metadata:
+                    type: object
+                    example: { 'video_count': 5, 'total_duration': 3600 }
+
+        # CreatorUp Integration schemas
+        CreatorUpVerifyResponse:
+            allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                      content:
+                          type: object
+                          properties:
+                              user:
+                                  type: object
+                                  properties:
+                                      digiup_user_id:
+                                          type: string
+                                          format: uuid
+                                      email:
+                                          type: string
+                                      name:
+                                          type: string
+                                      phone:
+                                          type: string
+                                      avatar_url:
+                                          type: string
+                                          nullable: true
+                              subscription:
+                                  type: object
+                                  properties:
+                                      plan:
+                                          type: string
+                                          example: 'premium'
+                                      status:
+                                          type: string
+                                          example: 'active'
+                                      end_date:
+                                          type: string
+                                          format: date-time
+
+        SyncStatus:
+            type: object
+            properties:
+                user_sync:
+                    type: object
+                    properties:
+                        status:
+                            type: string
+                            enum: [pending, synced, error]
+                        last_synced:
+                            type: string
+                            format: date-time
+                            nullable: true
+                        error_message:
+                            type: string
+                            nullable: true
+                usage_sync:
+                    type: object
+                    properties:
+                        status:
+                            type: string
+                            enum: [pending, synced, error]
+                        last_synced:
+                            type: string
+                            format: date-time
+                            nullable: true
+                        pending_count:
+                            type: integer
+
+        # Analytics schemas
+        SyncAnalytics:
+            type: object
+            properties:
+                total_events:
+                    type: integer
+                    example: 1500
+                completed_events:
+                    type: integer
+                    example: 1450
+                failed_events:
+                    type: integer
+                    example: 30
+                pending_events:
+                    type: integer
+                    example: 20
+                success_rate:
+                    type: number
+                    format: float
+                    example: 96.67
+                last_24h_events:
+                    type: integer
+                    example: 145
+                avg_processing_time:
+                    type: number
+                    format: float
+                    example: 2.5
+                    description: 'Waktu rata-rata pemrosesan dalam detik'
+
+        SystemHealth:
+            type: object
+            properties:
+                status:
+                    type: string
+                    enum: [healthy, degraded, critical]
+                    example: 'healthy'
+                database:
+                    type: object
+                    properties:
+                        status:
+                            type: string
+                            enum: [connected, disconnected]
+                        response_time:
+                            type: number
+                            format: float
+                            example: 12.5
+                queue:
+                    type: object
+                    properties:
+                        status:
+                            type: string
+                            enum: [active, inactive]
+                        pending_jobs:
+                            type: integer
+                            example: 25
+                external_apis:
+                    type: object
+                    properties:
+                        creatorup:
+                            type: object
+                            properties:
+                                status:
+                                    type: string
+                                    enum: [online, offline]
+                                last_check:
+                                    type: string
+                                    format: date-time
+
+# Endpoints
 paths:
-  /:
-    get:
-      tags:
-        - 📋 API Info & Health
-      summary: Root Endpoint
-      description: API root endpoint
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /info:
-    get:
-      tags:
-        - 📋 API Info & Health
-      summary: API Info
-      description: Get API information and status
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /logs:
-    get:
-      tags:
-        - 📋 API Info & Health
-      summary: API Logs
-      description: Get API logs (development only)
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /docs:
-    get:
-      tags:
-        - 📋 API Info & Health
-      summary: API Documentation
-      description: Swagger API documentation (development only)
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /client/auth/register:
-    post:
-      tags:
-        - 👤 Client - Authentication
-      summary: Register User
-      description: Register a new user account
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              example:
-                email: johndoe@sample.com
-                name: John Doe
-                phone: '081234567890'
-                password: Johndoe@1234
-      parameters:
-        - name: Content-Type
-          in: header
-          schema:
-            type: string
-          example: application/json
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /client/auth/register/confirmation:
-    get:
-      tags:
-        - 👤 Client - Authentication
-      summary: Register Confirmation
-      description: Confirm user registration with email token
-      parameters:
-        - name: email
-          in: query
-          schema:
-            type: string
-          description: User email
-          example: '{{user_email}}'
-        - name: token
-          in: query
-          schema:
-            type: string
-          description: Confirmation token from email
-          example: sample_token_here
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /client/auth/login:
-    post:
-      tags:
-        - 👤 Client - Authentication
-      summary: Login
-      description: Login user and get JWT token
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              example:
-                email: johndoe@sample.com
-                password: Johndoe@1234
-      parameters:
-        - name: Content-Type
-          in: header
-          schema:
-            type: string
-          example: application/json
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /client/auth/logout:
-    get:
-      tags:
-        - 👤 Client - Authentication
-      summary: Logout
-      description: Logout user (requires authentication)
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /client/auth/google:
-    get:
-      tags:
-        - 👤 Client - Authentication
-      summary: Google OAuth URL
-      description: Get Google OAuth authorization URL
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /client/auth/google/callback:
-    get:
-      tags:
-        - 👤 Client - Authentication
-      summary: Google OAuth Callback
-      description: Handle Google OAuth callback with authorization code
-      parameters:
-        - name: code
-          in: query
-          schema:
-            type: string
-          description: Authorization code from Google OAuth
-          example: authorization_code_from_google
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /client/auth/google/token:
-    post:
-      tags:
-        - 👤 Client - Authentication
-      summary: Google OAuth Token
-      description: Authenticate with Google access token (for mobile apps)
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              type: string
-              example: '"{\n    \"accessToken\": \"google_access_token_here\"\n}"'
-      parameters:
-        - name: Content-Type
-          in: header
-          schema:
-            type: string
-          example: application/json
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /client/auth/forgotpassword/request:
-    post:
-      tags:
-        - 🔐 Client - Password Recovery
-      summary: Forgot Password Request
-      description: Request password reset token
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              example:
-                email: johndoe@sample.com
-      parameters:
-        - name: Content-Type
-          in: header
-          schema:
-            type: string
-          example: application/json
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /client/auth/forgotpassword/reset:
-    post:
-      tags:
-        - 🔐 Client - Password Recovery
-      summary: Forgot Password Reset
-      description: Reset password with token
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              example:
-                email: johndoe@sample.com
-                token: password_reset_token_here
-                password: NewPassword@1234
-      parameters:
-        - name: Content-Type
-          in: header
-          schema:
-            type: string
-          example: application/json
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /client/user/me:
-    get:
-      tags:
-        - 👥 Client - User Profile
-      summary: Get My Profile
-      description: Get current user profile information
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-    patch:
-      tags:
-        - 👥 Client - User Profile
-      summary: Update My Profile
-      description: Update current user profile information
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              example:
-                name: John Doe Updated
-                phone: '081234567891'
-                avatar: https://example.com/avatar.jpg
-                accountName: John's Account
-                accountLocationState: Jakarta
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: Content-Type
-          in: header
-          schema:
-            type: string
-          example: application/json
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-    delete:
-      tags:
-        - 👥 Client - User Profile
-      summary: Delete My Account
-      description: Delete current user account
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /admin/users:
-    get:
-      tags:
-        - 🔧 Admin - User Management
-      summary: Get All Users
-      description: Get list of all users (admin access required)
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /templates/email:
-    get:
-      tags:
-        - 📧 Development - Templates
-      summary: Email Templates
-      description: View email templates (development only)
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
-  /templates/sms:
-    get:
-      tags:
-        - 📧 Development - Templates
-      summary: SMS Templates
-      description: View SMS templates (development only)
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json: {}
+    # Root and Info endpoints
+    /:
+        get:
+            tags: [Commons]
+            summary: API Root
+            description: Endpoint root yang mengarahkan ke dokumentasi API
+            responses:
+                '200':
+                    description: Redirect berhasil
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
+                            example:
+                                success: true
+                                message: 'Success'
+                                content: '/api/v1/info'
+
+    /info:
+        get:
+            tags: [Commons]
+            summary: API Information
+            description: Mendapatkan informasi tentang API termasuk nama, versi, dan deskripsi
+            responses:
+                '200':
+                    description: Informasi API berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: object
+                                              properties:
+                                                  name:
+                                                      type: string
+                                                      example: 'express-prisma-ts-boilerplate'
+                                                  description:
+                                                      type: string
+                                                      example: 'A starter project written in TypeScript for quickly building Express RESTful APIs'
+                                                  version:
+                                                      type: string
+                                                      example: '1.0.1'
+
+    /logs:
+        get:
+            tags: [Commons]
+            summary: View API Logs
+            description: Melihat log aktivitas API untuk debugging dan monitoring
+            responses:
+                '200':
+                    description: Log berhasil ditampilkan
+                    content:
+                        text/html:
+                            schema:
+                                type: string
+                                description: HTML page dengan log API
+
+    /docs:
+        get:
+            tags: [Commons]
+            summary: API Documentation
+            description: Halaman dokumentasi Swagger UI untuk API
+            responses:
+                '200':
+                    description: Dokumentasi API
+                    content:
+                        text/html:
+                            schema:
+                                type: string
+                                description: Swagger UI documentation page
+
+    # Template endpoints (Development only)
+    /templates/email/welcome-user:
+        get:
+            tags: [Templates]
+            summary: Preview Email Template - Welcome User
+            description: Preview template email selamat datang untuk pengguna baru
+            responses:
+                '200':
+                    description: Template email berhasil ditampilkan
+                    content:
+                        text/html:
+                            schema:
+                                type: string
+
+    /templates/email/email-verify:
+        get:
+            tags: [Templates]
+            summary: Preview Email Template - Email Verification
+            description: Preview template email verifikasi alamat email
+            responses:
+                '200':
+                    description: Template email berhasil ditampilkan
+                    content:
+                        text/html:
+                            schema:
+                                type: string
+
+    /templates/email/password-request:
+        get:
+            tags: [Templates]
+            summary: Preview Email Template - Password Reset Request
+            description: Preview template email permintaan reset password
+            responses:
+                '200':
+                    description: Template email berhasil ditampilkan
+                    content:
+                        text/html:
+                            schema:
+                                type: string
+
+    /templates/email/password-reseted:
+        get:
+            tags: [Templates]
+            summary: Preview Email Template - Password Reset Success
+            description: Preview template email konfirmasi password berhasil direset
+            responses:
+                '200':
+                    description: Template email berhasil ditampilkan
+                    content:
+                        text/html:
+                            schema:
+                                type: string
+
+    # Authentication endpoints
+    /api/v1/client/auth/register:
+        post:
+            tags: [Authentication]
+            summary: User Registration
+            description: |
+                Mendaftarkan pengguna baru ke sistem. Setelah registrasi berhasil, 
+                pengguna akan menerima email konfirmasi untuk verifikasi akun.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UserRegistration'
+                        example:
+                            email: 'user@example.com'
+                            name: 'John Doe'
+                            phone: '+6281234567890'
+                            password: 'password123'
+            responses:
+                '201':
+                    description: Registrasi berhasil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          message:
+                                              example: 'Successfully create'
+                                          content:
+                                              type: object
+                                              properties:
+                                                  id:
+                                                      type: string
+                                                      format: uuid
+                                                  email:
+                                                      type: string
+                                                  name:
+                                                      type: string
+                                                  message:
+                                                      type: string
+                                                      example: 'Please check your email for verification'
+                '422':
+                    description: Data tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            example:
+                                success: false
+                                message: 'Email sudah terdaftar'
+                                error: 'REGISTER_ERROR'
+
+    /api/v1/client/auth/register/confirmation:
+        get:
+            tags: [Authentication]
+            summary: Confirm User Registration
+            description: Konfirmasi registrasi pengguna melalui token yang dikirim via email
+            parameters:
+                - name: email
+                  in: query
+                  required: true
+                  schema:
+                      type: string
+                      format: email
+                  description: Email pengguna yang akan dikonfirmasi
+                  example: 'user@example.com'
+                - name: token
+                  in: query
+                  required: true
+                  schema:
+                      type: string
+                  description: Token konfirmasi yang dikirim via email
+                  example: 'abc123def456'
+            responses:
+                '200':
+                    description: Konfirmasi registrasi berhasil
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
+                            example:
+                                success: true
+                                message: 'Email berhasil diverifikasi'
+                                content: null
+                '401':
+                    description: Token tidak valid atau expired
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/client/auth/login:
+        post:
+            tags: [Authentication]
+            summary: User Login
+            description: |
+                Login pengguna dengan email dan password. Mengembalikan JWT token 
+                yang digunakan untuk autentikasi endpoint lainnya.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UserLogin'
+                        example:
+                            email: 'user@example.com'
+                            password: 'password123'
+            responses:
+                '200':
+                    description: Login berhasil
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/LoginResponse'
+                            example:
+                                success: true
+                                message: 'Success'
+                                content:
+                                    id: '123e4567-e89b-12d3-a456-426614174000'
+                                    name: 'John Doe'
+                                    email: 'user@example.com'
+                                    phone: '+6281234567890'
+                                    avatar: null
+                                    isVerified: true
+                                    createdAt: '2024-01-01T00:00:00.000Z'
+                                    updatedAt: '2024-01-01T00:00:00.000Z'
+                                    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                '401':
+                    description: Kredensial tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            example:
+                                success: false
+                                message: 'Email atau password salah'
+                                error: 'LOGIN_ERROR'
+
+    /api/v1/client/auth/logout:
+        get:
+            tags: [Authentication]
+            summary: User Logout
+            description: Logout pengguna dan menginvalidasi JWT token
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: Logout berhasil
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
+                            example:
+                                success: true
+                                message: 'Berhasil logout'
+                                content: null
+                '401':
+                    description: Token tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/client/auth/forgotpassword/request:
+        post:
+            tags: [Authentication]
+            summary: Request Password Reset
+            description: Mengirim email dengan link reset password ke alamat email pengguna
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [email]
+                            properties:
+                                email:
+                                    type: string
+                                    format: email
+                                    example: 'user@example.com'
+            responses:
+                '200':
+                    description: Email reset password berhasil dikirim
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
+                            example:
+                                success: true
+                                message: 'Link reset password telah dikirim ke email Anda'
+                                content: null
+                '404':
+                    description: Email tidak ditemukan
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/client/auth/forgotpassword/reset:
+        post:
+            tags: [Authentication]
+            summary: Reset Password
+            description: Reset password pengguna menggunakan token yang dikirim via email
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [email, token, newPassword]
+                            properties:
+                                email:
+                                    type: string
+                                    format: email
+                                    example: 'user@example.com'
+                                token:
+                                    type: string
+                                    example: 'abc123def456'
+                                newPassword:
+                                    type: string
+                                    minLength: 4
+                                    maxLength: 16
+                                    example: 'newpassword123'
+            responses:
+                '200':
+                    description: Password berhasil direset
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
+                '401':
+                    description: Token tidak valid atau expired
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    # Google OAuth endpoints
+    /api/v1/client/auth/google:
+        get:
+            tags: [Authentication]
+            summary: Google OAuth URL
+            description: Mendapatkan URL untuk autentikasi Google OAuth
+            responses:
+                '200':
+                    description: URL Google OAuth berhasil dibuat
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: object
+                                              properties:
+                                                  authUrl:
+                                                      type: string
+                                                      example: 'https://accounts.google.com/oauth/authorize?...'
+                                                  state:
+                                                      type: string
+                                                      example: 'random_state_string'
+
+    /api/v1/client/auth/google/callback:
+        get:
+            tags: [Authentication]
+            summary: Google OAuth Callback
+            description: Callback endpoint untuk Google OAuth (digunakan oleh Google)
+            parameters:
+                - name: code
+                  in: query
+                  required: true
+                  schema:
+                      type: string
+                  description: Authorization code dari Google
+                - name: state
+                  in: query
+                  schema:
+                      type: string
+                  description: State parameter untuk security
+            responses:
+                '302':
+                    description: Redirect setelah autentikasi berhasil
+                '400':
+                    description: Error dalam proses autentikasi
+
+    /api/v1/client/auth/google/token:
+        post:
+            tags: [Authentication]
+            summary: Google OAuth Token Exchange
+            description: Menukar authorization code dari Google dengan JWT token aplikasi
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [code]
+                            properties:
+                                code:
+                                    type: string
+                                    description: Authorization code dari Google
+                                    example: '4/0AX4XfWh...'
+                                state:
+                                    type: string
+                                    description: State parameter (optional)
+                                    example: 'random_state_string'
+            responses:
+                '200':
+                    description: Token berhasil ditukar
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/LoginResponse'
+                '400':
+                    description: Code tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    # User Management endpoints
+    /api/v1/client/user/me:
+        get:
+            tags: [User Management]
+            summary: Get Current User Profile
+            description: Mendapatkan profil pengguna yang sedang login
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: Profil pengguna berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              $ref: '#/components/schemas/User'
+                '401':
+                    description: Token tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+        patch:
+            tags: [User Management]
+            summary: Update Current User Profile
+            description: Memperbarui profil pengguna yang sedang login
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                                    minLength: 3
+                                    maxLength: 32
+                                    example: 'John Doe Updated'
+                                phone:
+                                    type: string
+                                    minLength: 11
+                                    maxLength: 15
+                                    example: '+6281234567891'
+                                avatar:
+                                    type: string
+                                    example: 'https://example.com/new-avatar.jpg'
+                                accountName:
+                                    type: string
+                                    example: "John's Company"
+                                accountLocationState:
+                                    type: string
+                                    example: 'Jakarta'
+            responses:
+                '200':
+                    description: Profil berhasil diperbarui
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              $ref: '#/components/schemas/User'
+                '422':
+                    description: Data tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+        delete:
+            tags: [User Management]
+            summary: Delete Current User Account
+            description: |
+                Menghapus akun pengguna yang sedang login (soft delete). 
+                Data pengguna akan ditandai sebagai deleted tetapi tidak dihapus permanen.
+            security:
+                - BearerAuth: []
+            responses:
+                '204':
+                    description: Akun berhasil dihapus
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          message:
+                                              example: 'Successfully delete'
+                '401':
+                    description: Token tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    # Apps endpoints (Client)
+    /api/v1/client/apps:
+        get:
+            tags: [Apps]
+            summary: Get All Apps
+            description: |
+                Mendapatkan daftar semua aplikasi yang tersedia di platform DigiUp.
+                Endpoint ini bersifat public dan tidak memerlukan autentikasi.
+            parameters:
+                - name: category
+                  in: query
+                  schema:
+                      type: string
+                      enum: [Creation, Automation, Analytics, Collaboration]
+                  description: Filter berdasarkan kategori aplikasi
+                - name: status
+                  in: query
+                  schema:
+                      type: string
+                      enum: [active, inactive, coming_soon]
+                  description: Filter berdasarkan status aplikasi
+                - name: limit
+                  in: query
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                      default: 20
+                  description: Jumlah aplikasi per halaman
+                - name: offset
+                  in: query
+                  schema:
+                      type: integer
+                      minimum: 0
+                      default: 0
+                  description: Offset untuk pagination
+            responses:
+                '200':
+                    description: Daftar aplikasi berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: array
+                                              items:
+                                                  $ref: '#/components/schemas/DigiupApp'
+                            example:
+                                success: true
+                                message: 'Success'
+                                content:
+                                    - id: '123e4567-e89b-12d3-a456-426614174000'
+                                      name: 'Video Editor Pro'
+                                      description: 'Advanced video editing with AI features'
+                                      logo: 'https://example.com/logo.jpg'
+                                      category: 'Creation'
+                                      status: 'active'
+                                      appUrl: 'https://videoeditor.digiup.com'
+                                      tags: ['video', 'editing', 'ai']
+                                      isEarlyAccess: false
+                                      sortOrder: 1
+                                      isActive: true
+
+    /api/v1/client/apps/{id}:
+        get:
+            tags: [Apps]
+            summary: Get App Detail
+            description: |
+                Mendapatkan detail lengkap dari aplikasi tertentu berdasarkan ID.
+                Endpoint ini bersifat public dan tidak memerlukan autentikasi.
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: uuid
+                  description: ID aplikasi yang ingin diambil detailnya
+                  example: '123e4567-e89b-12d3-a456-426614174000'
+            responses:
+                '200':
+                    description: Detail aplikasi berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              $ref: '#/components/schemas/DigiupApp'
+                '404':
+                    description: Aplikasi tidak ditemukan
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            example:
+                                success: false
+                                message: 'App not found'
+                                error: 'APP_NOT_FOUND'
+
+    # Apps Pricing endpoints
+    /api/v1/client/apps-pricing/apps/{appId}/pricing:
+        get:
+            tags: [Apps Pricing]
+            summary: Get App Pricing Plans
+            description: |
+                Mendapatkan daftar semua paket pricing untuk aplikasi tertentu.
+                Endpoint ini bersifat public dan menampilkan semua opsi pricing yang tersedia.
+            parameters:
+                - name: appId
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: uuid
+                  description: ID aplikasi yang ingin diambil paket pricingnya
+                  example: '123e4567-e89b-12d3-a456-426614174000'
+            responses:
+                '200':
+                    description: Paket pricing berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: array
+                                              items:
+                                                  $ref: '#/components/schemas/AppPricingPlan'
+                            example:
+                                success: true
+                                message: 'Success'
+                                content:
+                                    - id: 'plan-123'
+                                      appId: '123e4567-e89b-12d3-a456-426614174000'
+                                      name: 'Free Plan'
+                                      price: 0
+                                      currency: 'IDR'
+                                      billingCycle: 'monthly'
+                                      isFree: true
+                                      features: { 'max_projects': 3, 'export_quality': '720p' }
+                                      limits: { 'api_calls_per_month': 1000 }
+                                    - id: 'plan-456'
+                                      name: 'Pro Plan'
+                                      price: 99000
+                                      currency: 'IDR'
+                                      billingCycle: 'monthly'
+                                      isFree: false
+                                      features:
+                                          {
+                                              'max_projects': 50,
+                                              'export_quality': '4K',
+                                              'ai_features': true,
+                                          }
+                                      limits: { 'api_calls_per_month': 10000 }
+                '404':
+                    description: Aplikasi tidak ditemukan
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/client/apps-pricing/apps/{appId}/subscribe/{planId}:
+        post:
+            tags: [Apps Pricing]
+            summary: Subscribe to App Plan
+            description: |
+                Berlangganan ke paket tertentu dari aplikasi. Pengguna harus sudah login 
+                dan akan dibuat subscription baru atau memperbarui subscription yang ada.
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: appId
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: uuid
+                  description: ID aplikasi yang ingin disubscribe
+                  example: '123e4567-e89b-12d3-a456-426614174000'
+                - name: planId
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: uuid
+                  description: ID paket pricing yang ingin disubscribe
+                  example: 'plan-456'
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                paymentReference:
+                                    type: string
+                                    description: Referensi pembayaran dari gateway payment
+                                    example: 'pay_abc123def456'
+                                autoRenew:
+                                    type: boolean
+                                    default: true
+                                    description: Apakah subscription otomatis diperpanjang
+            responses:
+                '201':
+                    description: Subscription berhasil dibuat
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          message:
+                                              example: 'Successfully create'
+                                          content:
+                                              type: object
+                                              properties:
+                                                  id:
+                                                      type: string
+                                                      format: uuid
+                                                  userId:
+                                                      type: string
+                                                      format: uuid
+                                                  appId:
+                                                      type: string
+                                                      format: uuid
+                                                  planId:
+                                                      type: string
+                                                      format: uuid
+                                                  status:
+                                                      type: string
+                                                      example: 'active'
+                                                  startDate:
+                                                      type: string
+                                                      format: date-time
+                                                  endDate:
+                                                      type: string
+                                                      format: date-time
+                                                  autoRenew:
+                                                      type: boolean
+                '400':
+                    description: Data request tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '401':
+                    description: Pengguna tidak terautentikasi
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '404':
+                    description: Aplikasi atau paket pricing tidak ditemukan
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/client/apps-pricing/subscriptions:
+        get:
+            tags: [Apps Pricing]
+            summary: Get My App Subscriptions
+            description: |
+                Mendapatkan daftar semua subscription aplikasi milik pengguna yang sedang login.
+                Termasuk informasi status, tanggal berakhir, dan detail paket.
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                      type: string
+                      enum: [active, expired, cancelled]
+                  description: Filter berdasarkan status subscription
+                - name: appId
+                  in: query
+                  schema:
+                      type: string
+                      format: uuid
+                  description: Filter berdasarkan ID aplikasi tertentu
+            responses:
+                '200':
+                    description: Daftar subscription berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: array
+                                              items:
+                                                  type: object
+                                                  properties:
+                                                      id:
+                                                          type: string
+                                                          format: uuid
+                                                      app:
+                                                          $ref: '#/components/schemas/DigiupApp'
+                                                      plan:
+                                                          $ref: '#/components/schemas/AppPricingPlan'
+                                                      status:
+                                                          type: string
+                                                          enum: [active, expired, cancelled]
+                                                      startDate:
+                                                          type: string
+                                                          format: date-time
+                                                      endDate:
+                                                          type: string
+                                                          format: date-time
+                                                      autoRenew:
+                                                          type: boolean
+                                                      paymentReference:
+                                                          type: string
+                                                          nullable: true
+                '401':
+                    description: Pengguna tidak terautentikasi
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    # Membership endpoints
+    /api/v1/client/membership/plans:
+        get:
+            tags: [Membership]
+            summary: Get Membership Plans
+            description: |
+                Mendapatkan daftar semua paket membership yang tersedia di platform DigiUp.
+                Endpoint ini bersifat public dan menampilkan semua opsi membership.
+            parameters:
+                - name: is_active
+                  in: query
+                  schema:
+                      type: boolean
+                  description: Filter berdasarkan status aktif plan
+            responses:
+                '200':
+                    description: Daftar paket membership berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: array
+                                              items:
+                                                  $ref: '#/components/schemas/MembershipPlan'
+                            example:
+                                success: true
+                                message: 'Success'
+                                content:
+                                    - id: 1
+                                      name: 'Free Plan'
+                                      price: 0
+                                      currency: 'IDR'
+                                      local_rendering_limit: 5
+                                      device_limit: 1
+                                      video_quality: 'medium'
+                                      has_ai_subtitle: true
+                                      has_ai_voiceover: false
+                                      support_level: 'none'
+                                    - id: 2
+                                      name: 'Premium Plan'
+                                      price: 99000
+                                      currency: 'IDR'
+                                      local_rendering_limit: null
+                                      device_limit: 3
+                                      video_quality: 'high'
+                                      has_ai_subtitle: true
+                                      has_ai_voiceover: true
+                                      ai_voiceover_limit: 1000
+                                      support_level: 'priority'
+
+    /api/v1/client/membership/subscribe/{planId}:
+        post:
+            tags: [Membership]
+            summary: Subscribe to Membership Plan
+            description: |
+                Berlangganan ke paket membership tertentu. Pengguna harus sudah login
+                dan akan dibuat subscription baru atau upgrade/downgrade dari plan yang ada.
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: planId
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+                  description: ID paket membership yang ingin disubscribe
+                  example: 2
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                paymentReference:
+                                    type: string
+                                    description: Referensi pembayaran dari gateway payment
+                                    example: 'pay_membership_abc123'
+                                autoRenew:
+                                    type: boolean
+                                    default: true
+                                    description: Apakah subscription otomatis diperpanjang
+            responses:
+                '201':
+                    description: Subscription membership berhasil dibuat
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          message:
+                                              example: 'Successfully create'
+                                          content:
+                                              type: object
+                                              properties:
+                                                  id:
+                                                      type: string
+                                                      format: uuid
+                                                  userId:
+                                                      type: string
+                                                      format: uuid
+                                                  planId:
+                                                      type: integer
+                                                  status:
+                                                      type: string
+                                                      example: 'active'
+                                                  startDate:
+                                                      type: string
+                                                      format: date-time
+                                                  endDate:
+                                                      type: string
+                                                      format: date-time
+                                                      nullable: true
+                                                  autoRenew:
+                                                      type: boolean
+                '400':
+                    description: Data request tidak valid atau plan tidak tersedia
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '401':
+                    description: Pengguna tidak terautentikasi
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '404':
+                    description: Paket membership tidak ditemukan
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/client/membership/feature/{feature}/access:
+        get:
+            tags: [Membership]
+            summary: Check Feature Access
+            description: |
+                Mengecek apakah pengguna memiliki akses ke fitur tertentu berdasarkan 
+                paket membership yang sedang aktif.
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: feature
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                  description: Nama fitur yang ingin dicek aksesnya
+                  example: 'ai_voiceover'
+                  enum:
+                      - local_rendering
+                      - ai_subtitle
+                      - ai_voiceover
+                      - priority_support
+                      - high_quality_export
+            responses:
+                '200':
+                    description: Status akses fitur berhasil dicek
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: object
+                                              properties:
+                                                  hasAccess:
+                                                      type: boolean
+                                                      example: true
+                                                  feature:
+                                                      type: string
+                                                      example: 'ai_voiceover'
+                                                  currentPlan:
+                                                      type: string
+                                                      example: 'Premium Plan'
+                                                  limit:
+                                                      type: integer
+                                                      nullable: true
+                                                      example: 1000
+                                                      description: 'Batas penggunaan fitur, null jika unlimited'
+                                                  used:
+                                                      type: integer
+                                                      example: 250
+                                                      description: 'Jumlah yang sudah digunakan bulan ini'
+                                                  remaining:
+                                                      type: integer
+                                                      nullable: true
+                                                      example: 750
+                                                      description: 'Sisa quota, null jika unlimited'
+                '401':
+                    description: Pengguna tidak terautentikasi
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '404':
+                    description: Fitur tidak ditemukan
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    # Batch Usage endpoints
+    /api/v1/client/batch/create:
+        post:
+            tags: [Batch Usage]
+            summary: Create Batch Usage Record
+            description: |
+                Mencatat penggunaan batch untuk tracking quota dan billing.
+                Digunakan untuk melacak penggunaan fitur seperti rendering video, AI processing, dll.
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [batchName, batchType, usageType, usageAmount]
+                            properties:
+                                appId:
+                                    type: string
+                                    format: uuid
+                                    description: ID aplikasi yang menggunakan batch (optional)
+                                    example: '123e4567-e89b-12d3-a456-426614174000'
+                                batchName:
+                                    type: string
+                                    description: Nama batch yang mudah diidentifikasi
+                                    example: 'Video Processing Batch #1'
+                                batchType:
+                                    type: string
+                                    description: Tipe batch processing
+                                    example: 'video_processing'
+                                    enum:
+                                        - video_processing
+                                        - audio_processing
+                                        - ai_processing
+                                        - image_processing
+                                        - data_analysis
+                                usageType:
+                                    type: string
+                                    description: Tipe penggunaan spesifik
+                                    example: 'rendering'
+                                    enum:
+                                        - rendering
+                                        - transcoding
+                                        - ai_analysis
+                                        - subtitle_generation
+                                        - voiceover_generation
+                                usageAmount:
+                                    type: integer
+                                    minimum: 1
+                                    description: Jumlah unit yang digunakan
+                                    example: 5
+                                metadata:
+                                    type: object
+                                    description: Data tambahan tentang batch processing
+                                    example:
+                                        video_count: 5
+                                        total_duration: 3600
+                                        output_quality: '1080p'
+                                        processing_time: 1200
+            responses:
+                '201':
+                    description: Batch usage berhasil dicatat
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          message:
+                                              example: 'Successfully create'
+                                          content:
+                                              $ref: '#/components/schemas/BatchUsage'
+                '400':
+                    description: Data request tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '401':
+                    description: Pengguna tidak terautentikasi
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '429':
+                    description: Quota penggunaan terlampaui
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            example:
+                                success: false
+                                message: 'Monthly usage quota exceeded'
+                                error: 'QUOTA_EXCEEDED'
+
+    /api/v1/client/batch/usage/monthly:
+        get:
+            tags: [Batch Usage]
+            summary: Get Monthly Usage Statistics
+            description: |
+                Mendapatkan statistik penggunaan batch untuk bulan tertentu.
+                Berguna untuk monitoring quota dan generating laporan penggunaan.
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: month
+                  in: query
+                  schema:
+                      type: string
+                      pattern: '^\\d{4}-\\d{2}$'
+                  description: 'Bulan dalam format YYYY-MM, default: bulan saat ini'
+                  example: '2024-01'
+                - name: appId
+                  in: query
+                  schema:
+                      type: string
+                      format: uuid
+                  description: Filter berdasarkan aplikasi tertentu
+                - name: batchType
+                  in: query
+                  schema:
+                      type: string
+                  description: Filter berdasarkan tipe batch
+                  example: 'video_processing'
+                - name: usageType
+                  in: query
+                  schema:
+                      type: string
+                  description: Filter berdasarkan tipe usage
+                  example: 'rendering'
+            responses:
+                '200':
+                    description: Statistik penggunaan bulanan berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: object
+                                              properties:
+                                                  monthYear:
+                                                      type: string
+                                                      example: '2024-01'
+                                                  totalUsage:
+                                                      type: integer
+                                                      example: 150
+                                                  usageByType:
+                                                      type: object
+                                                      example:
+                                                          video_processing: 100
+                                                          ai_processing: 30
+                                                          audio_processing: 20
+                                                  usageByApp:
+                                                      type: object
+                                                      example:
+                                                          '123e4567-e89b-12d3-a456-426614174000': 80
+                                                          '456e7890-e12b-34d5-a678-901234567890': 70
+                                                  quotaLimits:
+                                                      type: object
+                                                      properties:
+                                                          monthly_limit:
+                                                              type: integer
+                                                              nullable: true
+                                                              example: 1000
+                                                          remaining:
+                                                              type: integer
+                                                              nullable: true
+                                                              example: 850
+                                                          percentage_used:
+                                                              type: number
+                                                              format: float
+                                                              example: 15.0
+                                                  recentBatches:
+                                                      type: array
+                                                      items:
+                                                          $ref: '#/components/schemas/BatchUsage'
+                                                      description: '10 batch terbaru dalam bulan tersebut'
+                '401':
+                    description: Pengguna tidak terautentikasi
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '400':
+                    description: Parameter bulan tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    # CreatorUp Integration endpoints
+    /api/v1/client/creatorup/verify:
+        post:
+            tags: [CreatorUp Integration]
+            summary: Verify DigiUp Token for CreatorUp
+            description: |
+                Endpoint untuk CreatorUp memverifikasi token pengguna DigiUp dan mendapatkan 
+                informasi pengguna serta status subscription. Digunakan dalam proses SSO.
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: Token berhasil diverifikasi
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreatorUpVerifyResponse'
+                            example:
+                                status: 'success'
+                                message: 'Token verified successfully'
+                                data:
+                                    user:
+                                        digiup_user_id: '123e4567-e89b-12d3-a456-426614174000'
+                                        email: 'user@example.com'
+                                        name: 'John Doe'
+                                        phone: '+6281234567890'
+                                        avatar_url: 'https://example.com/avatar.jpg'
+                                    subscription:
+                                        plan: 'premium'
+                                        status: 'active'
+                                        end_date: '2024-02-01T00:00:00.000Z'
+                '401':
+                    description: Token tidak valid atau expired
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/client/creatorup/profile:
+        get:
+            tags: [CreatorUp Integration]
+            summary: Get User Profile for CreatorUp
+            description: |
+                Mendapatkan profil pengguna DigiUp untuk ditampilkan di CreatorUp.
+                Menyediakan informasi yang diperlukan untuk sistem profile sync.
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: Profil pengguna berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: object
+                                              properties:
+                                                  digiup_user_id:
+                                                      type: string
+                                                      format: uuid
+                                                  email:
+                                                      type: string
+                                                  name:
+                                                      type: string
+                                                  phone:
+                                                      type: string
+                                                  avatar_url:
+                                                      type: string
+                                                      nullable: true
+                                                  is_active:
+                                                      type: boolean
+                                                  last_login:
+                                                      type: string
+                                                      format: date-time
+                '401':
+                    description: Pengguna tidak terautentikasi
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/client/creatorup/access:
+        get:
+            tags: [CreatorUp Integration]
+            summary: Check User Access for CreatorUp
+            description: |
+                Mengecek apakah pengguna memiliki akses ke CreatorUp berdasarkan 
+                status akun dan subscription yang aktif.
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: Status akses berhasil dicek
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: object
+                                              properties:
+                                                  hasAccess:
+                                                      type: boolean
+                                                      example: true
+                                                  subscription:
+                                                      type: object
+                                                      properties:
+                                                          plan:
+                                                              type: string
+                                                              example: 'premium'
+                                                          status:
+                                                              type: string
+                                                              example: 'active'
+                                                          end_date:
+                                                              type: string
+                                                              format: date-time
+                '401':
+                    description: Pengguna tidak terautentikasi
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    # CreatorUp Sync endpoints
+    /api/v1/client/creatorup/sync/user:
+        post:
+            tags: [CreatorUp Integration]
+            summary: Sync User Data to CreatorUp
+            description: |
+                Mengsinkronkan data pengguna DigiUp ke CreatorUp. Digunakan untuk 
+                memastikan data pengguna konsisten antara kedua platform.
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                force_sync:
+                                    type: boolean
+                                    default: false
+                                    description: 'Paksa sync meski tidak ada perubahan'
+                                fields:
+                                    type: array
+                                    items:
+                                        type: string
+                                        enum: [name, email, phone, avatar, subscription]
+                                    description: 'Field spesifik yang ingin disync'
+                                    example: ['name', 'subscription']
+            responses:
+                '200':
+                    description: Sinkronisasi berhasil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: object
+                                              properties:
+                                                  sync_id:
+                                                      type: string
+                                                      format: uuid
+                                                  status:
+                                                      type: string
+                                                      enum: [completed, queued]
+                                                  synced_fields:
+                                                      type: array
+                                                      items:
+                                                          type: string
+                                                  sync_timestamp:
+                                                      type: string
+                                                      format: date-time
+                '400':
+                    description: Request tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '401':
+                    description: Pengguna tidak terautentikasi
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '502':
+                    description: CreatorUp tidak dapat diakses
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/client/creatorup/sync/usage:
+        post:
+            tags: [CreatorUp Integration]
+            summary: Sync Usage Data from CreatorUp
+            description: |
+                Mengsinkronkan data penggunaan dari CreatorUp ke DigiUp. 
+                Digunakan untuk tracking quota dan billing yang akurat.
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [usage_data]
+                            properties:
+                                usage_data:
+                                    type: array
+                                    items:
+                                        type: object
+                                        required: [batch_name, batch_type, usage_type, usage_amount]
+                                        properties:
+                                            creatorup_batch_id:
+                                                type: string
+                                                example: 'cu_batch_123'
+                                            batch_name:
+                                                type: string
+                                                example: 'CreatorUp Video Export #5'
+                                            batch_type:
+                                                type: string
+                                                example: 'video_export'
+                                            usage_type:
+                                                type: string
+                                                example: 'export_processing'
+                                            usage_amount:
+                                                type: integer
+                                                example: 3
+                                            completed_at:
+                                                type: string
+                                                format: date-time
+                                                example: '2024-01-15T10:30:00Z'
+                                            metadata:
+                                                type: object
+                                                example:
+                                                    export_quality: '1080p'
+                                                    file_size_mb: 250
+                                                    processing_duration: 120
+                                batch_month:
+                                    type: string
+                                    pattern: '^\\d{4}-\\d{2}$'
+                                    description: 'Bulan untuk usage data (YYYY-MM)'
+                                    example: '2024-01'
+            responses:
+                '201':
+                    description: Data usage berhasil disinkronkan
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          message:
+                                              example: 'Successfully create'
+                                          content:
+                                              type: object
+                                              properties:
+                                                  synced_count:
+                                                      type: integer
+                                                      example: 3
+                                                  skipped_count:
+                                                      type: integer
+                                                      example: 0
+                                                  sync_id:
+                                                      type: string
+                                                      format: uuid
+                                                  sync_timestamp:
+                                                      type: string
+                                                      format: date-time
+                '400':
+                    description: Data usage tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '401':
+                    description: Pengguna tidak terautentikasi
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/client/creatorup/sync/status:
+        get:
+            tags: [CreatorUp Integration]
+            summary: Get Sync Status
+            description: |
+                Mendapatkan status sinkronisasi antara DigiUp dan CreatorUp untuk pengguna.
+                Menampilkan status sync user data dan usage data.
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: Status sync berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              $ref: '#/components/schemas/SyncStatus'
+                            example:
+                                success: true
+                                message: 'Success'
+                                content:
+                                    user_sync:
+                                        status: 'synced'
+                                        last_synced: '2024-01-15T10:30:00Z'
+                                        error_message: null
+                                    usage_sync:
+                                        status: 'synced'
+                                        last_synced: '2024-01-15T09:15:00Z'
+                                        pending_count: 0
+                '401':
+                    description: Pengguna tidak terautentikasi
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    # CreatorUp Webhook endpoints
+    /api/v1/client/creatorup/webhook/usage-update:
+        post:
+            tags: [CreatorUp Integration]
+            summary: CreatorUp Usage Update Webhook
+            description: |
+                Webhook endpoint untuk CreatorUp mengirim update data penggunaan secara real-time.
+                Endpoint ini digunakan oleh CreatorUp untuk notifikasi otomatis.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [event_type, user_id, usage_data, timestamp]
+                            properties:
+                                event_type:
+                                    type: string
+                                    enum: [usage_created, usage_updated, batch_completed]
+                                    example: 'batch_completed'
+                                user_id:
+                                    type: string
+                                    description: 'DigiUp user ID atau CreatorUp user ID'
+                                    example: '123e4567-e89b-12d3-a456-426614174000'
+                                usage_data:
+                                    type: object
+                                    properties:
+                                        creatorup_batch_id:
+                                            type: string
+                                        batch_name:
+                                            type: string
+                                        batch_type:
+                                            type: string
+                                        usage_type:
+                                            type: string
+                                        usage_amount:
+                                            type: integer
+                                        completed_at:
+                                            type: string
+                                            format: date-time
+                                        metadata:
+                                            type: object
+                                timestamp:
+                                    type: string
+                                    format: date-time
+                                    description: 'Timestamp dari CreatorUp'
+                                signature:
+                                    type: string
+                                    description: 'Webhook signature untuk verifikasi'
+            responses:
+                '200':
+                    description: Webhook berhasil diproses
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: object
+                                              properties:
+                                                  webhook_id:
+                                                      type: string
+                                                      format: uuid
+                                                  processed_at:
+                                                      type: string
+                                                      format: date-time
+                                                  status:
+                                                      type: string
+                                                      example: 'processed'
+                '400':
+                    description: Payload webhook tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '401':
+                    description: Signature webhook tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/client/creatorup/webhook/subscription-update:
+        post:
+            tags: [CreatorUp Integration]
+            summary: CreatorUp Subscription Update Webhook
+            description: |
+                Webhook endpoint untuk CreatorUp mengirim update status subscription pengguna.
+                Digunakan untuk notifikasi perubahan status subscription secara real-time.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [event_type, user_id, subscription_data, timestamp]
+                            properties:
+                                event_type:
+                                    type: string
+                                    enum:
+                                        [
+                                            subscription_activated,
+                                            subscription_expired,
+                                            subscription_cancelled,
+                                            plan_changed,
+                                        ]
+                                    example: 'subscription_activated'
+                                user_id:
+                                    type: string
+                                    description: 'DigiUp user ID'
+                                    example: '123e4567-e89b-12d3-a456-426614174000'
+                                subscription_data:
+                                    type: object
+                                    properties:
+                                        plan_type:
+                                            type: string
+                                            example: 'premium'
+                                        status:
+                                            type: string
+                                            enum: [active, expired, cancelled]
+                                        start_date:
+                                            type: string
+                                            format: date-time
+                                        end_date:
+                                            type: string
+                                            format: date-time
+                                            nullable: true
+                                        metadata:
+                                            type: object
+                                timestamp:
+                                    type: string
+                                    format: date-time
+                                signature:
+                                    type: string
+                                    description: 'Webhook signature untuk verifikasi'
+            responses:
+                '200':
+                    description: Webhook subscription berhasil diproses
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
+                '400':
+                    description: Payload webhook tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '401':
+                    description: Signature webhook tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    # Admin endpoints
+    /api/v1/admin/users:
+        get:
+            tags: [Admin - Users]
+            summary: Get All Users (Admin)
+            description: |
+                Mendapatkan daftar semua pengguna di sistem (khusus admin).
+                Menampilkan informasi lengkap pengguna termasuk status dan metadata.
+            security:
+                - AdminAuth: []
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                      type: integer
+                      minimum: 1
+                      default: 1
+                  description: Nomor halaman untuk pagination
+                - name: limit
+                  in: query
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                      default: 20
+                  description: Jumlah data per halaman
+                - name: search
+                  in: query
+                  schema:
+                      type: string
+                  description: Pencarian berdasarkan nama atau email
+                - name: status
+                  in: query
+                  schema:
+                      type: string
+                      enum: [active, disabled, deleted]
+                  description: Filter berdasarkan status pengguna
+                - name: account_type
+                  in: query
+                  schema:
+                      type: string
+                      enum: [free, premium, enterprise]
+                  description: Filter berdasarkan tipe akun
+                - name: is_registered
+                  in: query
+                  schema:
+                      type: boolean
+                  description: Filter berdasarkan status registrasi
+            responses:
+                '200':
+                    description: Daftar pengguna berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: object
+                                              properties:
+                                                  users:
+                                                      type: array
+                                                      items:
+                                                          type: object
+                                                          properties:
+                                                              id:
+                                                                  type: string
+                                                                  format: uuid
+                                                              name:
+                                                                  type: string
+                                                              email:
+                                                                  type: string
+                                                              phone:
+                                                                  type: string
+                                                              avatar:
+                                                                  type: string
+                                                                  nullable: true
+                                                              accountType:
+                                                                  type: string
+                                                              isDisabled:
+                                                                  type: boolean
+                                                              isDeleted:
+                                                                  type: boolean
+                                                              isRegistered:
+                                                                  type: boolean
+                                                              createdAt:
+                                                                  type: string
+                                                                  format: date-time
+                                                              updatedAt:
+                                                                  type: string
+                                                                  format: date-time
+                                                              deletedAt:
+                                                                  type: string
+                                                                  format: date-time
+                                                                  nullable: true
+                                                  pagination:
+                                                      type: object
+                                                      properties:
+                                                          current_page:
+                                                              type: integer
+                                                          total_pages:
+                                                              type: integer
+                                                          total_count:
+                                                              type: integer
+                                                          per_page:
+                                                              type: integer
+                '401':
+                    description: Tidak terautentikasi sebagai admin
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '403':
+                    description: Akses ditolak - bukan admin
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/admin/apps:
+        post:
+            tags: [Admin - Apps]
+            summary: Create New App (Admin)
+            description: |
+                Membuat aplikasi baru di platform DigiUp (khusus admin).
+                Aplikasi yang dibuat akan tersedia untuk semua pengguna.
+            security:
+                - AdminAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAppRequest'
+                        example:
+                            name: 'AI Video Generator'
+                            description: 'Generate videos automatically using AI technology'
+                            logo: 'https://example.com/ai-video-logo.jpg'
+                            category: 'Creation'
+                            status: 'active'
+                            appUrl: 'https://aivideo.digiup.com'
+                            features:
+                                - name: 'AI Script Generation'
+                                  description: 'Automatically generate video scripts'
+                                - name: 'Voice Synthesis'
+                                  description: 'Convert text to natural speech'
+                            tags: ['ai', 'video', 'automation']
+                            isEarlyAccess: false
+                            sortOrder: 1
+            responses:
+                '201':
+                    description: Aplikasi berhasil dibuat
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          message:
+                                              example: 'Successfully create'
+                                          content:
+                                              $ref: '#/components/schemas/DigiupApp'
+                '400':
+                    description: Data aplikasi tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '401':
+                    description: Tidak terautentikasi sebagai admin
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '409':
+                    description: Nama aplikasi sudah ada
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+        get:
+            tags: [Admin - Apps]
+            summary: Get All Apps (Admin)
+            description: |
+                Mendapatkan daftar semua aplikasi di sistem dengan informasi lengkap (khusus admin).
+                Termasuk aplikasi yang inactive atau dalam development.
+            security:
+                - AdminAuth: []
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                      type: integer
+                      minimum: 1
+                      default: 1
+                - name: limit
+                  in: query
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100
+                      default: 20
+                - name: search
+                  in: query
+                  schema:
+                      type: string
+                  description: Pencarian berdasarkan nama atau deskripsi
+                - name: category
+                  in: query
+                  schema:
+                      type: string
+                      enum: [Creation, Automation, Analytics, Collaboration]
+                - name: status
+                  in: query
+                  schema:
+                      type: string
+                      enum: [active, inactive, coming_soon]
+                - name: is_active
+                  in: query
+                  schema:
+                      type: boolean
+                  description: Filter berdasarkan status aktif
+            responses:
+                '200':
+                    description: Daftar aplikasi berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: object
+                                              properties:
+                                                  apps:
+                                                      type: array
+                                                      items:
+                                                          $ref: '#/components/schemas/DigiupApp'
+                                                  pagination:
+                                                      type: object
+                                                      properties:
+                                                          current_page:
+                                                              type: integer
+                                                          total_pages:
+                                                              type: integer
+                                                          total_count:
+                                                              type: integer
+                                                          per_page:
+                                                              type: integer
+                '401':
+                    description: Tidak terautentikasi sebagai admin
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/admin/apps/{id}:
+        put:
+            tags: [Admin - Apps]
+            summary: Update App (Admin)
+            description: |
+                Memperbarui informasi aplikasi (khusus admin).
+                Dapat mengubah semua property aplikasi termasuk status dan konfigurasi.
+            security:
+                - AdminAuth: []
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: uuid
+                  description: ID aplikasi yang akan diupdate
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                                    example: 'AI Video Generator Pro'
+                                description:
+                                    type: string
+                                    example: 'Updated description with new features'
+                                logo:
+                                    type: string
+                                    example: 'https://example.com/new-logo.jpg'
+                                category:
+                                    type: string
+                                    enum: [Creation, Automation, Analytics, Collaboration]
+                                status:
+                                    type: string
+                                    enum: [active, inactive, coming_soon]
+                                appUrl:
+                                    type: string
+                                    example: 'https://aivideo-pro.digiup.com'
+                                features:
+                                    type: array
+                                    items:
+                                        type: object
+                                tags:
+                                    type: array
+                                    items:
+                                        type: string
+                                isEarlyAccess:
+                                    type: boolean
+                                sortOrder:
+                                    type: integer
+                                isActive:
+                                    type: boolean
+            responses:
+                '200':
+                    description: Aplikasi berhasil diperbarui
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              $ref: '#/components/schemas/DigiupApp'
+                '400':
+                    description: Data update tidak valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '401':
+                    description: Tidak terautentikasi sebagai admin
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '404':
+                    description: Aplikasi tidak ditemukan
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+        delete:
+            tags: [Admin - Apps]
+            summary: Delete App (Admin)
+            description: |
+                Menghapus aplikasi dari sistem (khusus admin).
+                Operasi ini akan menghapus aplikasi beserta semua data terkait seperti pricing plans dan subscriptions.
+            security:
+                - AdminAuth: []
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: uuid
+                  description: ID aplikasi yang akan dihapus
+            responses:
+                '204':
+                    description: Aplikasi berhasil dihapus
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          message:
+                                              example: 'Successfully delete'
+                '401':
+                    description: Tidak terautentikasi sebagai admin
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '404':
+                    description: Aplikasi tidak ditemukan
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '409':
+                    description: Aplikasi tidak dapat dihapus karena masih memiliki subscription aktif
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    # Admin Analytics endpoints
+    /api/v1/admin/analytics/sync:
+        get:
+            tags: [Admin - Analytics]
+            summary: Get Sync Analytics (Admin)
+            description: |
+                Mendapatkan analitik lengkap tentang proses sinkronisasi data antara DigiUp dan CreatorUp.
+                Termasuk statistik sukses rate, error rate, dan performa sistem.
+            security:
+                - AdminAuth: []
+            parameters:
+                - name: start_date
+                  in: query
+                  schema:
+                      type: string
+                      format: date
+                  description: Tanggal mulai untuk filter data
+                  example: '2024-01-01'
+                - name: end_date
+                  in: query
+                  schema:
+                      type: string
+                      format: date
+                  description: Tanggal akhir untuk filter data
+                  example: '2024-01-31'
+                - name: event_type
+                  in: query
+                  schema:
+                      type: string
+                      enum: [user_sync, usage_sync, subscription_sync]
+                  description: Filter berdasarkan tipe event sync
+                - name: status
+                  in: query
+                  schema:
+                      type: string
+                      enum: [pending, processing, completed, failed]
+                  description: Filter berdasarkan status sync
+            responses:
+                '200':
+                    description: Analytics sync berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              allOf:
+                                                  - $ref: '#/components/schemas/SyncAnalytics'
+                                                  - type: object
+                                                    properties:
+                                                        event_breakdown:
+                                                            type: object
+                                                            properties:
+                                                                user_sync:
+                                                                    type: object
+                                                                    properties:
+                                                                        total: { type: integer }
+                                                                        success: { type: integer }
+                                                                        failed: { type: integer }
+                                                                usage_sync:
+                                                                    type: object
+                                                                    properties:
+                                                                        total: { type: integer }
+                                                                        success: { type: integer }
+                                                                        failed: { type: integer }
+                                                                subscription_sync:
+                                                                    type: object
+                                                                    properties:
+                                                                        total: { type: integer }
+                                                                        success: { type: integer }
+                                                                        failed: { type: integer }
+                                                        hourly_stats:
+                                                            type: array
+                                                            items:
+                                                                type: object
+                                                                properties:
+                                                                    hour: { type: string }
+                                                                    events: { type: integer }
+                                                                    success_rate: { type: number }
+                                                        top_errors:
+                                                            type: array
+                                                            items:
+                                                                type: object
+                                                                properties:
+                                                                    error_type: { type: string }
+                                                                    count: { type: integer }
+                                                                    last_occurrence:
+                                                                        {
+                                                                            type: string,
+                                                                            format: date-time,
+                                                                        }
+                '401':
+                    description: Tidak terautentikasi sebagai admin
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/admin/analytics/sync/user/{userId}:
+        get:
+            tags: [Admin - Analytics]
+            summary: Get User Sync Analytics (Admin)
+            description: |
+                Mendapatkan analytics sinkronisasi spesifik untuk pengguna tertentu.
+                Berguna untuk debugging dan monitoring pengguna individual.
+            security:
+                - AdminAuth: []
+            parameters:
+                - name: userId
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: uuid
+                  description: ID pengguna yang akan dianalisis
+                - name: start_date
+                  in: query
+                  schema:
+                      type: string
+                      format: date
+                  description: Tanggal mulai untuk filter data
+                - name: end_date
+                  in: query
+                  schema:
+                      type: string
+                      format: date
+                  description: Tanggal akhir untuk filter data
+                - name: limit
+                  in: query
+                  schema:
+                      type: integer
+                      default: 50
+                  description: Jumlah event terbaru yang ditampilkan
+            responses:
+                '200':
+                    description: User analytics berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: object
+                                              properties:
+                                                  user:
+                                                      type: object
+                                                      properties:
+                                                          id: { type: string, format: uuid }
+                                                          name: { type: string }
+                                                          email: { type: string }
+                                                          sync_status: { type: string }
+                                                          last_sync:
+                                                              { type: string, format: date-time }
+                                                  sync_history:
+                                                      type: array
+                                                      items:
+                                                          type: object
+                                                          properties:
+                                                              id: { type: string, format: uuid }
+                                                              event_type: { type: string }
+                                                              status: { type: string }
+                                                              created_at:
+                                                                  {
+                                                                      type: string,
+                                                                      format: date-time,
+                                                                  }
+                                                              processed_at:
+                                                                  {
+                                                                      type: string,
+                                                                      format: date-time,
+                                                                  }
+                                                              error_message:
+                                                                  { type: string, nullable: true }
+                                                              retry_count: { type: integer }
+                                                  usage_stats:
+                                                      type: object
+                                                      properties:
+                                                          total_usage_synced: { type: integer }
+                                                          last_usage_sync:
+                                                              { type: string, format: date-time }
+                                                          pending_usage_events: { type: integer }
+                '401':
+                    description: Tidak terautentikasi sebagai admin
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '404':
+                    description: Pengguna tidak ditemukan
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/admin/analytics/health:
+        get:
+            tags: [Admin - Analytics]
+            summary: Get System Health (Admin)
+            description: |
+                Mendapatkan status kesehatan sistem secara keseluruhan.
+                Termasuk status database, queue, dan koneksi ke external services.
+            security:
+                - AdminAuth: []
+            responses:
+                '200':
+                    description: System health berhasil diambil
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              $ref: '#/components/schemas/SystemHealth'
+                            example:
+                                success: true
+                                message: 'Success'
+                                content:
+                                    status: 'healthy'
+                                    database:
+                                        status: 'connected'
+                                        response_time: 12.5
+                                    queue:
+                                        status: 'active'
+                                        pending_jobs: 25
+                                    external_apis:
+                                        creatorup:
+                                            status: 'online'
+                                            last_check: '2024-01-15T10:30:00Z'
+                '401':
+                    description: Tidak terautentikasi sebagai admin
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    # Admin Maintenance endpoints
+    /api/v1/admin/analytics/retry-failed-sync:
+        post:
+            tags: [Admin - Analytics]
+            summary: Retry Failed Sync Events (Admin)
+            description: |
+                Mencoba ulang semua sync events yang gagal. Berguna untuk recovery 
+                setelah downtime atau masalah teknis pada external services.
+            security:
+                - AdminAuth: []
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                event_type:
+                                    type: string
+                                    enum: [user_sync, usage_sync, subscription_sync]
+                                    description: 'Filter retry berdasarkan tipe event'
+                                max_retry_count:
+                                    type: integer
+                                    default: 3
+                                    description: 'Maksimal retry count untuk event yang akan dicoba ulang'
+                                user_id:
+                                    type: string
+                                    format: uuid
+                                    description: 'Retry hanya untuk user tertentu'
+                                older_than_hours:
+                                    type: integer
+                                    default: 1
+                                    description: 'Retry events yang gagal lebih dari X jam yang lalu'
+            responses:
+                '200':
+                    description: Retry process berhasil dimulai
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: object
+                                              properties:
+                                                  retry_job_id:
+                                                      type: string
+                                                      format: uuid
+                                                  events_queued:
+                                                      type: integer
+                                                      example: 15
+                                                  estimated_completion:
+                                                      type: string
+                                                      format: date-time
+                                                  status:
+                                                      type: string
+                                                      example: 'queued'
+                '401':
+                    description: Tidak terautentikasi sebagai admin
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /api/v1/admin/analytics/cleanup-old-data:
+        post:
+            tags: [Admin - Analytics]
+            summary: Cleanup Old Data (Admin)
+            description: |
+                Membersihkan data lama dari sistem seperti log sync events, webhook logs,
+                dan data analytics yang sudah tidak diperlukan.
+            security:
+                - AdminAuth: []
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                older_than_days:
+                                    type: integer
+                                    default: 90
+                                    description: 'Hapus data yang lebih lama dari X hari'
+                                data_types:
+                                    type: array
+                                    items:
+                                        type: string
+                                        enum: [sync_events, webhook_logs, batch_usage, error_logs]
+                                    default: ['sync_events', 'webhook_logs']
+                                    description: 'Tipe data yang akan dibersihkan'
+                                dry_run:
+                                    type: boolean
+                                    default: false
+                                    description: 'Jika true, hanya menampilkan data yang akan dihapus tanpa menghapus'
+            responses:
+                '200':
+                    description: Cleanup process berhasil dijalankan
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/SuccessResponse'
+                                    - type: object
+                                      properties:
+                                          content:
+                                              type: object
+                                              properties:
+                                                  cleanup_job_id:
+                                                      type: string
+                                                      format: uuid
+                                                  records_affected:
+                                                      type: object
+                                                      properties:
+                                                          sync_events: { type: integer }
+                                                          webhook_logs: { type: integer }
+                                                          batch_usage: { type: integer }
+                                                          error_logs: { type: integer }
+                                                  total_records_cleaned:
+                                                      type: integer
+                                                  disk_space_freed_mb:
+                                                      type: number
+                                                      format: float
+                                                  status:
+                                                      type: string
+                                                      enum: [completed, queued]
+                '401':
+                    description: Tidak terautentikasi sebagai admin
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+# Tags for grouping endpoints
+tags:
+    - name: Commons
+      description: Endpoint umum untuk informasi API dan utilitas
+    - name: Templates
+      description: Preview template email dan SMS (development only)
+    - name: Authentication
+      description: Sistem autentikasi pengguna dengan dukungan OAuth Google
+    - name: User Management
+      description: Manajemen profil dan akun pengguna
+    - name: Apps
+      description: Katalog aplikasi yang tersedia di platform DigiUp
+    - name: Apps Pricing
+      description: Manajemen pricing plans dan subscription aplikasi
+    - name: Membership
+      description: Sistem membership dan subscription platform
+    - name: Batch Usage
+      description: Tracking penggunaan batch untuk quota dan billing
+    - name: CreatorUp Integration
+      description: Integrasi dengan platform CreatorUp untuk SSO dan sync data
+    - name: Admin - Users
+      description: Manajemen pengguna oleh administrator
+    - name: Admin - Apps
+      description: Manajemen aplikasi oleh administrator
+    - name: Admin - Analytics
+      description: Analytics dan monitoring sistem untuk administrator

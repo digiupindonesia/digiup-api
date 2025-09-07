@@ -1,0 +1,168 @@
+{
+	"id": "digiup-api-env",
+	"name": "DigiUp API - Complete Environment",
+	"values": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3345",
+			"type": "default",
+			"enabled": true,
+			"description": "Base URL untuk API DigiUp"
+		},
+		{
+			"key": "digiup_token",
+			"value": "",
+			"type": "secret",
+			"enabled": true,
+			"description": "Token dari login DigiUp user - copy dari response login"
+		},
+		{
+			"key": "admin_token",
+			"value": "",
+			"type": "secret",
+			"enabled": true,
+			"description": "Token dari login admin - copy dari response login admin"
+		},
+		{
+			"key": "user_email",
+			"value": "user@digiup.com",
+			"type": "default",
+			"enabled": true,
+			"description": "Email user untuk login"
+		},
+		{
+			"key": "user_password",
+			"value": "password123",
+			"type": "secret",
+			"enabled": true,
+			"description": "Password user untuk login"
+		},
+		{
+			"key": "new_user_email",
+			"value": "newuser@digiup.com",
+			"type": "default",
+			"enabled": true,
+			"description": "Email untuk register user baru"
+		},
+		{
+			"key": "new_user_name",
+			"value": "New User",
+			"type": "default",
+			"enabled": true,
+			"description": "Nama untuk register user baru"
+		},
+		{
+			"key": "new_user_phone",
+			"value": "+6281234567890",
+			"type": "default",
+			"enabled": true,
+			"description": "Phone untuk register user baru"
+		},
+		{
+			"key": "new_user_password",
+			"value": "password123",
+			"type": "secret",
+			"enabled": true,
+			"description": "Password untuk register user baru"
+		},
+		{
+			"key": "creatorup_email",
+			"value": "test@creatorup.com",
+			"type": "default",
+			"enabled": true,
+			"description": "Email untuk CreatorUp (bisa berbeda dengan DigiUp email)"
+		},
+		{
+			"key": "creatorup_password",
+			"value": "password123",
+			"type": "secret",
+			"enabled": true,
+			"description": "Password untuk CreatorUp"
+		},
+		{
+			"key": "creatorup_username",
+			"value": "testuser",
+			"type": "default",
+			"enabled": true,
+			"description": "Username untuk CreatorUp"
+		},
+		{
+			"key": "app_id",
+			"value": "creatorup-app",
+			"type": "default",
+			"enabled": true,
+			"description": "ID app untuk testing (contoh: creatorup-app)"
+		},
+		{
+			"key": "app_category",
+			"value": "Creation",
+			"type": "default",
+			"enabled": true,
+			"description": "Kategori app (Creation, Automation, Analytics, Collaboration)"
+		},
+		{
+			"key": "google_auth_code",
+			"value": "",
+			"type": "default",
+			"enabled": true,
+			"description": "Authorization code dari Google OAuth - didapat dari callback"
+		},
+		{
+			"key": "updated_name",
+			"value": "Updated Name",
+			"type": "default",
+			"enabled": true,
+			"description": "Nama baru untuk update profile"
+		},
+		{
+			"key": "updated_phone",
+			"value": "+6281234567891",
+			"type": "default",
+			"enabled": true,
+			"description": "Phone baru untuk update profile"
+		},
+		{
+			"key": "updated_avatar",
+			"value": "https://example.com/new-avatar.jpg",
+			"type": "default",
+			"enabled": true,
+			"description": "Avatar baru untuk update profile"
+		},
+		{
+			"key": "new_app_name",
+			"value": "New Amazing App",
+			"type": "default",
+			"enabled": true,
+			"description": "Nama app baru untuk create app (admin)"
+		},
+		{
+			"key": "new_app_description",
+			"value": "Description of new amazing app",
+			"type": "default",
+			"enabled": true,
+			"description": "Deskripsi app baru"
+		},
+		{
+			"key": "new_app_logo",
+			"value": "https://example.com/new-app-logo.png",
+			"type": "default",
+			"enabled": true,
+			"description": "Logo app baru"
+		},
+		{
+			"key": "new_app_category",
+			"value": "Automation",
+			"type": "default",
+			"enabled": true,
+			"description": "Kategori app baru"
+		},
+		{
+			"key": "new_app_url",
+			"value": "https://newapp.com",
+			"type": "default",
+			"enabled": true,
+			"description": "URL app baru"
+		}
+	],
+	"_postman_variable_scope": "environment"
+}

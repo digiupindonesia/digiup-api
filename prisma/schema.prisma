@@ -33,4 +33,200 @@ model User {
   createdAt                   DateTime  @default(now())
   updatedAt                   DateTime  @updatedAt
   deletedAt                   DateTime? @db.Timestamptz(6)
+
+  // CreatorUp Integration Fields
+  creatorup_synced_at   DateTime?
+  creatorup_user_id     String?   @db.VarChar(255)
+  last_creatorup_access DateTime?
+  sync_status           String    @default("pending") @db.VarChar(50) // pending, synced, error
+  creatorup_metadata    Json?
+
+  // Relations
+  subscriptions    UserSubscription[]
+  batchUsage       BatchUsage[]
+  creatorupUsage   CreatorUpUsage[]
+  appSubscriptions AppSubscription[]
+
+  @@map("users")
+}
+
+model MembershipPlan {
+  id                    Int      @id @default(autoincrement())
+  name                  String   @db.VarChar(255)
+  price                 Int      @default(0)
+  currency              String   @default("IDR") @db.VarChar(10)
+  local_rendering_limit Int? // null means unlimited
+  device_limit          Int      @default(1)
+  video_quality         String   @default("medium") @db.VarChar(50)
+  has_ai_subtitle       Boolean  @default(true)
+  has_ai_voiceover      Boolean  @default(false)
+  ai_voiceover_limit    Int? // null means unlimited
+  support_level         String   @default("none") @db.VarChar(50)
+  is_active             Boolean  @default(true)
+  sort_order            Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  subscriptions UserSubscription[]
+
+  @@map("membership_plans")
+}
+
+model UserSubscription {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  planId           Int
+  status           String    @default("active") @db.VarChar(50) // active, expired, cancelled
+  startDate        DateTime  @default(now())
+  endDate          DateTime?
+  autoRenew        Boolean   @default(true)
+  paymentReference String?   @db.VarChar(255)
+  usageStats       Json? // Store usage statistics
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan MembershipPlan @relation(fields: [planId], references: [id])
+
+  @@map("user_subscriptions")
+}
+
+model DigiupApp {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String   @db.VarChar(255)
+  description   String   @db.Text
+  logo          String?  @db.VarChar(500)
+  category      String   @db.VarChar(50) // Creation, Automation, Analytics, Collaboration
+  status        String   @default("active") @db.VarChar(50) // active, inactive, coming_soon
+  appUrl        String?  @db.VarChar(500)
+  features      Json? // JSON array of features
+  tags          String[] @db.VarChar(50)
+  isEarlyAccess Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  pricingPlans  AppPricingPlan[]
+  subscriptions AppSubscription[]
+
+  @@map("digiup_apps")
+}
+
+model AppPricingPlan {
+  id           String   @id @default(uuid()) @db.Uuid
+  appId        String   @db.Uuid
+  name         String   @db.VarChar(255) // Free, Basic, Pro, Enterprise
+  price        Int      @default(0) // Price in cents
+  currency     String   @default("IDR") @db.VarChar(10)
+  billingCycle String   @default("monthly") @db.VarChar(20) // monthly, yearly, one_time
+  isFree       Boolean  @default(false)
+  features     Json? // JSON object with features and limits
+  limits       Json? // JSON object with usage limits
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  app           DigiupApp         @relation(fields: [appId], references: [id], onDelete: Cascade)
+  subscriptions AppSubscription[]
+
+  @@map("app_pricing_plans")
+}
+
+model AppSubscription {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @db.Uuid
+  appId            String   @db.Uuid
+  planId           String   @db.Uuid
+  status           String   @default("active") @db.VarChar(50) // active, expired, cancelled
+  startDate        DateTime @default(now())
+  endDate          DateTime
+  autoRenew        Boolean  @default(true)
+  paymentReference String?  @db.VarChar(255)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  app  DigiupApp      @relation(fields: [appId], references: [id], onDelete: Cascade)
+  plan AppPricingPlan @relation(fields: [planId], references: [id])
+
+  @@unique([userId, appId]) // One subscription per user per app
+  @@map("app_subscriptions")
+}
+
+model BatchUsage {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  appId       String?  @db.Uuid // Track which app the usage is for (optional for CreatorUp usage)
+  batchName   String   @db.VarChar(255)
+  batchType   String   @db.VarChar(50)
+  usageType   String   @db.VarChar(50)
+  usageAmount Int      @default(1)
+  monthYear   String   @db.VarChar(7) // Format: YYYY-MM
+  completedAt DateTime @default(now())
+  metadata    Json? // Store additional data like video_count, processing_time
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("batch_usage")
+}
+
+// New model for CreatorUp usage tracking
+model CreatorUpUsage {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  creatorupUserId String   @db.VarChar(255)
+  batchName       String   @db.VarChar(255)
+  batchType       String   @db.VarChar(50)
+  usageType       String   @db.VarChar(50)
+  usageAmount     Int      @default(1)
+  monthYear       String   @db.VarChar(7)
+  completedAt     DateTime @default(now())
+  metadata        Json?
+  syncedAt        DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("creatorup_usage")
+}
+
+// New model for sync events tracking
+model SyncEvent {
+  id           String    @id @default(uuid()) @db.Uuid
+  eventType    String    @db.VarChar(50) // user_sync, usage_sync, subscription_sync
+  userId       String?   @db.Uuid
+  status       String    @default("pending") @db.VarChar(50) // pending, processing, completed, failed
+  payload      Json?
+  response     Json?
+  errorMessage String?   @db.Text
+  retryCount   Int       @default(0)
+  maxRetries   Int       @default(3)
+  processedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("sync_events")
+}
+
+// New model for webhook logs
+model WebhookLog {
+  id           String    @id @default(uuid()) @db.Uuid
+  source       String    @db.VarChar(50) // creatorup, digiup
+  eventType    String    @db.VarChar(50)
+  payload      Json?
+  signature    String?   @db.VarChar(255)
+  status       String    @default("received") @db.VarChar(50) // received, processed, failed
+  response     Json?
+  errorMessage String?   @db.Text
+  processedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@map("webhook_logs")
 }

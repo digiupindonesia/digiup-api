@@ -128,10 +128,11 @@ const errorHandler = (err: any, req: Request, res: Response, next: NextFunction)
         error: {
             code: 500,
             error: 'SERVER_ERROR',
-            message: process.env.NODE_ENV === 'development' 
-                ? err.message || 'Internal Server Error'
-                : 'Internal Server Error',
-            ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+            message:
+                process.env.NODE_ENV === 'development'
+                    ? err.message || 'Internal Server Error'
+                    : 'Internal Server Error',
+            ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
         },
     });
 };

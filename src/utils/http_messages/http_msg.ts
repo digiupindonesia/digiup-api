@@ -26,7 +26,7 @@ export default {
     http401(error: any) {
         const params = {
             success: false,
-            message: 'Acesso não autorizado',
+            message: 'No Authorized',
             error: error || null,
         };
         return { httpStatusCode: 401, data: params };
@@ -34,10 +34,18 @@ export default {
     http401Custom(customMsg: string, error: any) {
         const params = {
             success: false,
-            message: customMsg || 'Acesso não autorizado',
+            message: customMsg || 'No Authorized',
             error: error || null,
         };
         return { httpStatusCode: 401, data: params };
+    },
+    http404(customMsg: string, error?: any) {
+        const params = {
+            success: false,
+            message: customMsg || 'Not found',
+            error: error || null,
+        };
+        return { httpStatusCode: 404, data: params };
     },
     http422(customMsg: string, error: any) {
         const params = {
@@ -46,5 +54,21 @@ export default {
             error: error || null,
         };
         return { httpStatusCode: 422, data: params };
+    },
+    http400(customMsg: string, error?: any) {
+        const params = {
+            success: false,
+            message: customMsg || 'Bad request',
+            error: error || null,
+        };
+        return { httpStatusCode: 400, data: params };
+    },
+    http500(customMsg: string, error?: any) {
+        const params = {
+            success: false,
+            message: customMsg || 'Internal server error',
+            error: error || null,
+        };
+        return { httpStatusCode: 500, data: params };
     },
 };

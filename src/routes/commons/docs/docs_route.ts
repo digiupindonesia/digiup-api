@@ -10,6 +10,13 @@ const options = {
     customCss: '.swagger-ui .topbar { display: none }',
     customSiteTitle: `Doc ${pkg.name}`,
     customfavIcon: '/assets/images/favicons/favicon.ico',
+    swaggerOptions: {
+        deepLinking: true,
+        displayRequestDuration: true,
+        tryItOutEnabled: true,
+        defaultModelsExpandDepth: 2,
+        defaultModelExpandDepth: 2,
+    },
 };
 
 // API Generated Doc

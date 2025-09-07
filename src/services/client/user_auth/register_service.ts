@@ -25,11 +25,13 @@ export default async (data: any) => {
 
     // Check existing user by email
     const existingUserByEmail = await getUserByEmail({ email: data.email });
-    if (!existingUserByEmail.success) return httpMsg.http422(existingUserByEmail.error || '', constError.ERROR_CODE.register);
+    if (!existingUserByEmail.success)
+        return httpMsg.http422(existingUserByEmail.error || '', constError.ERROR_CODE.register);
 
     // Check existing user by phone (WhatsApp)
     const existingUserByPhone = await getUserByPhone({ phone: data.phone });
-    if (!existingUserByPhone.success) return httpMsg.http422(existingUserByPhone.error || '', constError.ERROR_CODE.register);
+    if (!existingUserByPhone.success)
+        return httpMsg.http422(existingUserByPhone.error || '', constError.ERROR_CODE.register);
 
     // Create new user with isRegistered = true
     data.isRegistered = true; // Set langsung ke true untuk register manual
@@ -47,10 +49,7 @@ export default async (data: any) => {
     if (!config.isTest && constEmail.IS_NOTIFICATE.welcome) {
         const sended = await sendEmail(registeredUser);
         if (!sended)
-            return httpMsg.http422(
-                'Failed to send welcome email!',
-                constError.ERROR_CODE.register,
-            );
+            return httpMsg.http422('Failed to send welcome email!', constError.ERROR_CODE.register);
         registeredUser.isEmailNotif = constEmail.IS_NOTIFICATE.welcome;
     }
 
@@ -129,7 +128,7 @@ const getUserByEmail = async (where: object) => {
     // Check if email already exists
     if (!result.success)
         return { success: false, data: null, error: constError.REGISTER_ERROR_MSG.serverError };
-    
+
     if (result.data && result.data.isRegistered) {
         return {
             success: false,
@@ -154,7 +153,7 @@ const getUserByPhone = async (where: object) => {
     // Check if phone already exists
     if (!result.success)
         return { success: false, data: null, error: constError.REGISTER_ERROR_MSG.serverError };
-    
+
     if (result.data && result.data.isRegistered) {
         return {
             success: false,
@@ -187,7 +186,7 @@ const createUsr = async (datas: any) => {
     // Create user tokens
     datas.tokenOfRegisterConfirmation = randtoken.suid(16);
     datas.tokenOfResetPassword = randtoken.suid(16);
-    
+
     // Set isRegistered = true for manual registration
     datas.isRegistered = true;
 

@@ -21,7 +21,7 @@ const middleware = () => {
         if (req.body) {
             req.body = clean(req.body);
         }
-        
+
         // Clean query - create new object instead of modifying readonly property
         if (req.query && Object.keys(req.query).length > 0) {
             const cleanedQuery: any = {};
@@ -32,10 +32,10 @@ const middleware = () => {
                 value: cleanedQuery,
                 writable: true,
                 enumerable: true,
-                configurable: true
+                configurable: true,
             });
         }
-        
+
         // Clean params - create new object instead of modifying readonly property
         if (req.params && Object.keys(req.params).length > 0) {
             const cleanedParams: any = {};
@@ -46,10 +46,10 @@ const middleware = () => {
                 value: cleanedParams,
                 writable: true,
                 enumerable: true,
-                configurable: true
+                configurable: true,
             });
         }
-        
+
         next();
     };
 };

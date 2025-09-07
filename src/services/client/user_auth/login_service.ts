@@ -17,12 +17,20 @@ export default async (data: any) => {
         isDeleted: false,
         isRegistered: true,
     });
-    if (!user.success) return httpMsg.http401Custom(constError.LOGIN_MSG.userNotFound, constError.ERROR_CODE.login);
-    console.log("masuk sini");
-    
+    if (!user.success)
+        return httpMsg.http401Custom(
+            constError.LOGIN_MSG.userNotFound,
+            constError.ERROR_CODE.login,
+        );
+    console.log('masuk sini');
+
     // Check password
     const checkedPassword = await checkPassword(data.password, user.data.password);
-    if (!checkedPassword) return httpMsg.http401Custom(constError.LOGIN_MSG.invalidPassword, constError.ERROR_CODE.login);
+    if (!checkedPassword)
+        return httpMsg.http401Custom(
+            constError.LOGIN_MSG.invalidPassword,
+            constError.ERROR_CODE.login,
+        );
 
     // Generate token access
     const generatedToken = await generateToken(user.data);

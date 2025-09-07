@@ -67,13 +67,13 @@ const googleAuthUrl = (req: Request, res: Response, next: NextFunction): void =>
     try {
         const googleOAuthService = new GoogleOAuthService();
         const authUrl = googleOAuthService.getAuthUrl();
-        
+
         res.status(200).json({
             success: true,
             message: 'Google OAuth URL generated successfully',
             data: {
-                authUrl
-            }
+                authUrl,
+            },
         });
     } catch (err: any) {
         logger.error(`Google OAuth URL generation error. ${err.message}`);
@@ -89,7 +89,7 @@ const googleAuthCallback = (req: Request, res: Response, next: NextFunction): vo
         res.status(400).json({
             success: false,
             message: 'Authorization code is required',
-            data: null
+            data: null,
         });
         return;
     }
@@ -106,21 +106,25 @@ const googleAuthCallback = (req: Request, res: Response, next: NextFunction): vo
                     phone: result.user!.phone || null,
                     avatar: result.user!.avatar || result.user!.google_avatar || null,
                     isVerified: result.user!.isRegistered,
-                    createdAt: result.user!.createdAt ? result.user!.createdAt.toISOString() : undefined,
-                    updatedAt: result.user!.updatedAt ? result.user!.updatedAt.toISOString() : undefined,
-                    token: result.token
+                    createdAt: result.user!.createdAt
+                        ? result.user!.createdAt.toISOString()
+                        : undefined,
+                    updatedAt: result.user!.updatedAt
+                        ? result.user!.updatedAt.toISOString()
+                        : undefined,
+                    token: result.token,
                 };
 
                 res.status(200).json({
                     success: true,
                     message: result.message,
-                    content: responseData
+                    content: responseData,
                 });
             } else {
                 res.status(400).json({
                     success: false,
                     message: result.message,
-                    data: null
+                    data: null,
                 });
             }
         })
@@ -138,7 +142,7 @@ const googleAuthToken = (req: Request, res: Response, next: NextFunction): void 
         res.status(400).json({
             success: false,
             message: 'Authorization code is required',
-            data: null
+            data: null,
         });
         return;
     }
@@ -155,21 +159,25 @@ const googleAuthToken = (req: Request, res: Response, next: NextFunction): void 
                     phone: result.user!.phone || null,
                     avatar: result.user!.avatar || result.user!.google_avatar || null,
                     isVerified: result.user!.isRegistered,
-                    createdAt: result.user!.createdAt ? result.user!.createdAt.toISOString() : undefined,
-                    updatedAt: result.user!.updatedAt ? result.user!.updatedAt.toISOString() : undefined,
-                    token: result.token
+                    createdAt: result.user!.createdAt
+                        ? result.user!.createdAt.toISOString()
+                        : undefined,
+                    updatedAt: result.user!.updatedAt
+                        ? result.user!.updatedAt.toISOString()
+                        : undefined,
+                    token: result.token,
                 };
 
                 res.status(200).json({
                     success: true,
                     message: result.message,
-                    content: responseData
+                    content: responseData,
                 });
             } else {
                 res.status(400).json({
                     success: false,
                     message: result.message,
-                    data: null
+                    data: null,
                 });
             }
         })
@@ -177,6 +185,87 @@ const googleAuthToken = (req: Request, res: Response, next: NextFunction): void 
             logger.error(`Google OAuth token authentication error. ${err.message}`);
             next(err);
         });
+};
+
+// CreatorUp Integration Methods
+const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
+    try {
+        const user = req.user as any;
+
+        // Format response sesuai dokumentasi CreatorUp
+        const responseData = {
+            user: {
+                digiup_user_id: user.id,
+                email: user.email,
+                name: user.name,
+                phone: user.phone,
+                avatar_url: user.avatar || user.google_avatar || null,
+            },
+            subscription: {
+                plan: user.accountType || 'free',
+                status: 'active',
+                end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+            },
+        };
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Token verified successfully',
+            data: responseData,
+        });
+    } catch (err: any) {
+        logger.error(`Token verification error. ${err.message}`);
+        next(err);
+    }
+};
+
+const getProfile = (req: Request, res: Response, next: NextFunction): void => {
+    try {
+        const user = req.user as any;
+
+        const responseData = {
+            digiup_user_id: user.id,
+            email: user.email,
+            name: user.name,
+            phone: user.phone,
+            avatar_url: user.avatar || user.google_avatar || null,
+            is_active: !user.isDisabled && !user.isDeleted,
+            last_login: user.updatedAt ? user.updatedAt.toISOString() : new Date().toISOString(),
+        };
+
+        res.status(200).json({
+            status: 'success',
+            message: 'User profile retrieved successfully',
+            data: responseData,
+        });
+    } catch (err: any) {
+        logger.error(`Get profile error. ${err.message}`);
+        next(err);
+    }
+};
+
+const checkAccess = (req: Request, res: Response, next: NextFunction): void => {
+    try {
+        const user = req.user as any;
+
+        const responseData = {
+            hasAccess: !user.isDisabled && !user.isDeleted,
+            subscription: {
+                plan: user.accountType || 'free',
+                status: 'active',
+                end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+            },
+        };
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Access granted',
+            data: responseData,
+        });
+    } catch (err: any) {
+        logger.error(`Check access error. ${err.message}`);
+        next(err);
+    }
 };
 
 export default {
@@ -189,4 +278,7 @@ export default {
     googleAuthUrl,
     googleAuthCallback,
     googleAuthToken,
+    verifyToken,
+    getProfile,
+    checkAccess,
 };

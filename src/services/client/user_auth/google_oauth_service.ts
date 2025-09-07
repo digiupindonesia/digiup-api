@@ -30,7 +30,7 @@ export class GoogleOAuthService {
         this.oauth2Client = new google.auth.OAuth2(
             config.googleOauth.clientId,
             config.googleOauth.clientSecret,
-            config.googleOauth.redirectUri
+            config.googleOauth.redirectUri,
         );
     }
 
@@ -40,13 +40,13 @@ export class GoogleOAuthService {
     getAuthUrl(): string {
         const scopes = [
             'https://www.googleapis.com/auth/userinfo.email',
-            'https://www.googleapis.com/auth/userinfo.profile'
+            'https://www.googleapis.com/auth/userinfo.profile',
         ];
 
         return this.oauth2Client.generateAuthUrl({
             access_type: 'offline',
             scope: scopes,
-            prompt: 'consent'
+            prompt: 'consent',
         });
     }
 
@@ -66,7 +66,7 @@ export class GoogleOAuthService {
             if (!data.email) {
                 return {
                     success: false,
-                    message: 'Unable to retrieve email from Google account'
+                    message: 'Unable to retrieve email from Google account',
                 };
             }
 
@@ -75,14 +75,11 @@ export class GoogleOAuthService {
                 where: {
                     OR: [
                         { email: data.email },
-                        { 
-                            AND: [
-                                { google_signin: true },
-                                { email: data.email }
-                            ]
-                        }
-                    ]
-                }
+                        {
+                            AND: [{ google_signin: true }, { email: data.email }],
+                        },
+                    ],
+                },
             });
 
             let user: User;
@@ -98,8 +95,8 @@ export class GoogleOAuthService {
                         google_family_name: data.family_name || existingUser.google_family_name,
                         google_avatar: data.picture || existingUser.google_avatar,
                         google_locale: data.locale || existingUser.google_locale,
-                        isRegistered: true // Google emails are verified
-                    }
+                        isRegistered: true, // Google emails are verified
+                    },
                 });
             } else {
                 // Create new user
@@ -118,8 +115,8 @@ export class GoogleOAuthService {
                         tokenOfRegisterConfirmation: '', // Required field
                         tokenOfResetPassword: '', // Required field
                         createdAt: new Date(),
-                        updatedAt: new Date()
-                    }
+                        updatedAt: new Date(),
+                    },
                 });
                 isNewUser = true;
             }
@@ -129,7 +126,7 @@ export class GoogleOAuthService {
                 user_id: user.id,
                 email: user.email,
                 name: user.name,
-                phone: user.phone
+                phone: user.phone,
             });
 
             return {
@@ -137,14 +134,15 @@ export class GoogleOAuthService {
                 user,
                 token: tokenResult.data,
                 isNewUser,
-                message: isNewUser ? 'Account created successfully with Google' : 'Signed in successfully with Google'
+                message: isNewUser
+                    ? 'Account created successfully with Google'
+                    : 'Signed in successfully with Google',
             };
-
         } catch (error) {
             console.error('Google OAuth error:', error);
             return {
                 success: false,
-                message: 'Failed to authenticate with Google'
+                message: 'Failed to authenticate with Google',
             };
         }
     }
@@ -164,7 +162,7 @@ export class GoogleOAuthService {
             if (!data.email) {
                 return {
                     success: false,
-                    message: 'Unable to retrieve email from Google account'
+                    message: 'Unable to retrieve email from Google account',
                 };
             }
 
@@ -173,14 +171,11 @@ export class GoogleOAuthService {
                 where: {
                     OR: [
                         { email: data.email },
-                        { 
-                            AND: [
-                                { google_signin: true },
-                                { email: data.email }
-                            ]
-                        }
-                    ]
-                }
+                        {
+                            AND: [{ google_signin: true }, { email: data.email }],
+                        },
+                    ],
+                },
             });
 
             let user: User;
@@ -196,8 +191,8 @@ export class GoogleOAuthService {
                         google_family_name: data.family_name || existingUser.google_family_name,
                         google_avatar: data.picture || existingUser.google_avatar,
                         google_locale: data.locale || existingUser.google_locale,
-                        isRegistered: true
-                    }
+                        isRegistered: true,
+                    },
                 });
             } else {
                 // Create new user
@@ -216,8 +211,8 @@ export class GoogleOAuthService {
                         tokenOfRegisterConfirmation: '', // Required field
                         tokenOfResetPassword: '', // Required field
                         createdAt: new Date(),
-                        updatedAt: new Date()
-                    }
+                        updatedAt: new Date(),
+                    },
                 });
                 isNewUser = true;
             }
@@ -227,7 +222,7 @@ export class GoogleOAuthService {
                 user_id: user.id,
                 email: user.email,
                 name: user.name,
-                phone: user.phone
+                phone: user.phone,
             });
 
             return {
@@ -235,14 +230,15 @@ export class GoogleOAuthService {
                 user,
                 token: tokenResult.data,
                 isNewUser,
-                message: isNewUser ? 'Account created successfully with Google' : 'Signed in successfully with Google'
+                message: isNewUser
+                    ? 'Account created successfully with Google'
+                    : 'Signed in successfully with Google',
             };
-
         } catch (error) {
             console.error('Google OAuth error:', error);
             return {
                 success: false,
-                message: 'Failed to authenticate with Google'
+                message: 'Failed to authenticate with Google',
             };
         }
     }

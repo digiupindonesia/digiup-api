@@ -50,7 +50,7 @@ const createServer = (app: any) => {
                 key: fs.readFileSync(`${config.ssl.privateKey}`),
                 cert: fs.readFileSync(`${config.ssl.certificate}`),
             };
-        } catch (err) {
+        } catch {
             logger.error(`Http server error - SSL certificate files is not found`);
             logger.error(`Http server error - Shutting down gracefully (SHUTDOWN)`);
             process.exit(0);
@@ -72,8 +72,10 @@ const onListening = (host: string, port: number, silent: boolean) => {
                 /* eslint-enable no-console */
             );
         } else {
+            /* eslint-disable no-console */
             console.log(
                 colorTxt.white(`-> Listening on http://${host}:${port}`),
+                /* eslint-enable no-console */
                 /* eslint-enable no-console */
             );
         }

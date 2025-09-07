@@ -1,5 +1,6 @@
 import httpMsg from '@utils/http_messages/http_msg';
 import servFindOneUser from '@dao/users/user_get_one_dao';
+import CreatorUpCredentialsService from '@services/client/creatorup_integration/creatorup_credentials_service';
 
 const errorCod = 'ERROR_USER_FIND_ME';
 const errorMsg = 'Failed to show user';
@@ -12,7 +13,20 @@ export default async (id: string) => {
     const user = await getUser({ id, isDeleted: false, isRegistered: true });
     if (!user.success) return httpMsg.http422(user.error || '', errorCod);
 
-    return httpMsg.http200(user.data);
+    // Check CreatorUp registration status
+    const credentialsService = new CreatorUpCredentialsService();
+    const isCreatorUpRegistered = await credentialsService.hasCredentials(id);
+
+    // Add CreatorUp status to user data
+    const userData = {
+        ...user.data,
+        creatorup: {
+            isRegistered: isCreatorUpRegistered,
+            syncStatus: user.data.sync_status || 'pending',
+        },
+    };
+
+    return httpMsg.http200(userData);
 };
 
 const checkRequiredDatas = (id: string) => /* istanbul ignore next */ {
@@ -28,6 +42,8 @@ const getUser = async (where: object) => {
         phone: true,
         avatar: true,
         accountType: true,
+        sync_status: true,
+        creatorup_metadata: true,
         createdAt: true,
     };
 

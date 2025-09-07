@@ -41,7 +41,8 @@ const testConfig = (env: IProcessEnv): IEnvConfig => {
         googleOauth: {
             clientId: env.GOOGLE_CLIENT_ID || 'test-google-client-id',
             clientSecret: env.GOOGLE_CLIENT_SECRET || 'test-google-client-secret',
-            redirectUri: env.GOOGLE_REDIRECT_URI || 'http://localhost:3345/api/client/auth/google/callback',
+            redirectUri:
+                env.GOOGLE_REDIRECT_URI || 'http://localhost:3345/api/client/auth/google/callback',
         },
     };
 };
@@ -87,7 +88,9 @@ const devConfig = (env: IProcessEnv): IEnvConfig => {
         googleOauth: {
             clientId: env.GOOGLE_CLIENT_ID || 'dev-google-client-id',
             clientSecret: env.GOOGLE_CLIENT_SECRET || 'dev-google-client-secret',
-            redirectUri: env.GOOGLE_REDIRECT_URI || 'http://localhost:3345/api/client/v1/auth/google/callback',
+            redirectUri:
+                env.GOOGLE_REDIRECT_URI ||
+                'http://localhost:3345/api/client/v1/auth/google/callback',
         },
     };
 };

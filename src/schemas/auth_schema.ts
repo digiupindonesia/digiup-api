@@ -82,3 +82,47 @@ export type registerType = z.infer<typeof register>;
 export type registerConfirmationType = z.infer<typeof registerConfirmation>;
 export type forgotPasswordRequestType = z.infer<typeof forgotPasswordRequest>;
 export type googleAuthTokenType = z.infer<typeof googleAuthToken>;
+
+// CreatorUp Integration Schemas
+export const creatorupRegister = z.object({
+    body: z.object({
+        username: z
+            .string()
+            .min(3, {
+                message: 'Username too short',
+            })
+            .max(32, {
+                message: 'Username too long',
+            }),
+        email: z.string().email({
+            message: 'Write a correct email address',
+        }),
+        password: z
+            .string()
+            .min(4, {
+                message: 'Password too short',
+            })
+            .max(16, {
+                message: 'Password too long',
+            }),
+    }),
+});
+
+export const creatorupSaveCredentials = z.object({
+    body: z.object({
+        email: z.string().email({
+            message: 'Write a correct email address',
+        }),
+        password: z
+            .string()
+            .min(4, {
+                message: 'Password too short',
+            })
+            .max(16, {
+                message: 'Password too long',
+            }),
+    }),
+});
+
+export type creatorupRegisterType = z.infer<typeof creatorupRegister>;
+export type creatorupSaveCredentialsType = z.infer<typeof creatorupSaveCredentials>;
