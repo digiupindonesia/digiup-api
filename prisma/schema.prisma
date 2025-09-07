@@ -19,6 +19,7 @@ model User {
   accountName                 String?   @db.VarChar(255)
   accountLocationState        String?   @db.VarChar(255)
   accountType                 String    @default("free") @db.VarChar(255)
+  role                        String    @default("user") @db.VarChar(50) // user, admin, super_admin
   google_signin               Boolean?  @default(false)
   google_given_name           String?   @db.VarChar(255)
   google_family_name          String?   @db.VarChar(255)

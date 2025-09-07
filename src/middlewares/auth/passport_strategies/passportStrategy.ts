@@ -78,6 +78,7 @@ const getUser = async (where: object) => {
         email: true,
         avatar: true,
         password: true,
+        role: true,
     };
 
     // Get user by email
