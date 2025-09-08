@@ -125,10 +125,10 @@ const createFreeTierSubscription = async (userId: string) => {
             };
         }
 
-        // Create free tier subscription (1 year validity)
+        // Create free tier subscription (1 month validity)
         const startDate = new Date();
         const endDate = new Date();
-        endDate.setFullYear(endDate.getFullYear() + 1); // 1 year free
+        endDate.setMonth(endDate.getMonth() + 1); // 1 month free
 
         const subscription = await prisma.appSubscription.create({
             data: {
