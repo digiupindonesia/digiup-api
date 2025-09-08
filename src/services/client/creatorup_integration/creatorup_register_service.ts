@@ -125,10 +125,10 @@ const createFreeTierSubscription = async (userId: string) => {
             };
         }
 
-        // Create free tier subscription (1 month validity)
+        // Create free tier subscription (lifetime with monthly reset)
         const startDate = new Date();
         const endDate = new Date();
-        endDate.setMonth(endDate.getMonth() + 1); // 1 month free
+        endDate.setFullYear(endDate.getFullYear() + 10); // 10 years (effectively lifetime)
 
         const subscription = await prisma.appSubscription.create({
             data: {
@@ -160,7 +160,7 @@ const createFreeTierSubscription = async (userId: string) => {
             },
         });
 
-        logger.info(`Free tier subscription created for user ${userId} on CreatorUp`);
+        logger.info(`Lifetime free tier subscription created for user ${userId} on CreatorUp`);
 
         return {
             success: true,
@@ -176,7 +176,7 @@ const createFreeTierSubscription = async (userId: string) => {
                 features: subscription.plan.features,
                 limits: subscription.plan.limits,
             },
-            message: 'Free tier subscription created successfully',
+            message: 'Lifetime free tier subscription created successfully',
         };
     } catch (error: any) {
         logger.error(`Failed to create free tier subscription: ${error.message}`);
