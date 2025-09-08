@@ -41,50 +41,26 @@ export default async (userId: string, category?: string) => {
         const credentialsService = new CreatorUpCredentialsService();
         const isCreatorUpRegistered = await credentialsService.hasCredentials(userId);
 
-        // Add CreatorUp app if user is registered
-        const userApps = [...(apps.data || [])];
+        // Process apps and add user-specific data
+        const userApps = (apps.data || []).map((app: any) => {
+            // Check if this is a CreatorUp app from database
+            const isCreatorUpApp = app.name.toLowerCase().includes('creator') || 
+                                 app.name.toLowerCase().includes('creatorup');
 
-        if (isCreatorUpRegistered) {
-            // Add CreatorUp app to the list
-            const creatorUpApp = {
-                id: 'creatorup-app',
-                name: 'CreatorUp',
-                description: 'Platform untuk membuat konten video dengan AI',
-                logo: 'https://creatorup.id/logo.png',
-                category: 'Creation',
-                status: 'active',
-                appUrl: 'https://creatorup.id',
-                features: ['AI Video Creation', 'Content Templates', 'Auto Subtitles'],
-                tags: ['AI', 'Video', 'Content Creation'],
-                isEarlyAccess: false,
-                sortOrder: 0,
-                createdAt: new Date().toISOString(),
-                isUserOwned: true,
-                userStatus: 'registered',
-            };
+            if (isCreatorUpApp) {
+                return {
+                    ...app,
+                    isUserOwned: isCreatorUpRegistered,
+                    userStatus: isCreatorUpRegistered ? 'registered' : 'not_registered',
+                };
+            }
 
-            userApps.unshift(creatorUpApp); // Add to beginning
-        } else {
-            // Add CreatorUp app as available but not owned
-            const creatorUpApp = {
-                id: 'creatorup-app',
-                name: 'CreatorUp',
-                description: 'Platform untuk membuat konten video dengan AI',
-                logo: 'https://creatorup.id/logo.png',
-                category: 'Creation',
-                status: 'active',
-                appUrl: 'https://creatorup.id',
-                features: ['AI Video Creation', 'Content Templates', 'Auto Subtitles'],
-                tags: ['AI', 'Video', 'Content Creation'],
-                isEarlyAccess: false,
-                sortOrder: 0,
-                createdAt: new Date().toISOString(),
+            return {
+                ...app,
                 isUserOwned: false,
-                userStatus: 'not_registered',
+                userStatus: 'available',
             };
-
-            userApps.unshift(creatorUpApp); // Add to beginning
-        }
+        });
 
         // Group by category for better presentation
         const categorizedApps = groupAppsByCategory(userApps);
