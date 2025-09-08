@@ -95,13 +95,13 @@ export class CreatorUpCredentialsService {
                 message: 'CreatorUp credentials retrieved successfully',
                 credentials: {
                     email: credentials.email,
+                    password: credentials.password,
                     registered_at: credentials.registered_at,
                 },
                 user: {
                     id: user.id,
                     email: user.email,
                     name: user.name,
-                    password: user.password,
                     sync_status: user.sync_status,
                 },
             });

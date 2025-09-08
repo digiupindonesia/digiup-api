@@ -60,7 +60,7 @@ export default async (userId: string, category?: string) => {
 
         // Create subscription map for quick lookup
         const subscriptionMap = new Map();
-        userSubscriptions.forEach(sub => {
+        userSubscriptions.forEach((sub) => {
             subscriptionMap.set(sub.appId, {
                 id: sub.id,
                 planName: sub.plan.name,
@@ -82,8 +82,9 @@ export default async (userId: string, category?: string) => {
         // Process apps and add user-specific data
         const userApps = (apps.data || []).map((app: any) => {
             // Check if this is a CreatorUp app from database
-            const isCreatorUpApp = app.name.toLowerCase().includes('creator') || 
-                                 app.name.toLowerCase().includes('creatorup');
+            const isCreatorUpApp =
+                app.name.toLowerCase().includes('creator') ||
+                app.name.toLowerCase().includes('creatorup');
 
             // Get subscription data for this app
             const subscription = subscriptionMap.get(app.id);
@@ -135,8 +136,8 @@ const groupAppsByCategory = (apps: any[]) => {
     const grouped: any = {};
 
     categories.forEach((category) => {
-        grouped[category] = apps.filter((app) => 
-            app.category && app.category.toLowerCase() === category.toLowerCase()
+        grouped[category] = apps.filter(
+            (app) => app.category && app.category.toLowerCase() === category.toLowerCase(),
         );
     });
 

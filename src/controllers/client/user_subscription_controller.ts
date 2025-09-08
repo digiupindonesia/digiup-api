@@ -4,7 +4,7 @@ import logger from '@utils/logger/winston/logger';
 
 const getSubscription = (req: Request, res: Response, next: NextFunction): void => {
     const user = req.user as any;
-    
+
     getUserSubscription(user.id)
         .then((result: any) => res.status(result.httpStatusCode).json(result.data))
         .catch((err: any) => {

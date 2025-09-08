@@ -60,8 +60,8 @@ const groupAppsByCategory = (apps: any[]) => {
     const grouped: any = {};
 
     categories.forEach((category) => {
-        grouped[category] = apps.filter((app) => 
-            app.category && app.category.toLowerCase() === category.toLowerCase()
+        grouped[category] = apps.filter(
+            (app) => app.category && app.category.toLowerCase() === category.toLowerCase(),
         );
     });
 

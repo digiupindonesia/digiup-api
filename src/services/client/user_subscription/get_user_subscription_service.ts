@@ -61,19 +61,23 @@ export default async (userId: string) => {
 
         // Format response
         const response = {
-            membership: membershipSubscription ? {
-                id: membershipSubscription.id,
-                planName: membershipSubscription.plan.name,
-                price: membershipSubscription.plan.price,
-                currency: membershipSubscription.plan.currency,
-                status: membershipSubscription.status,
-                startDate: membershipSubscription.startDate,
-                endDate: membershipSubscription.endDate,
-                activeUntil: membershipSubscription.endDate,
-                autoRenew: membershipSubscription.autoRenew,
-                isActive: membershipSubscription.endDate ? new Date() < membershipSubscription.endDate : true,
-            } : null,
-            apps: appSubscriptions.map(sub => ({
+            membership: membershipSubscription
+                ? {
+                      id: membershipSubscription.id,
+                      planName: membershipSubscription.plan.name,
+                      price: membershipSubscription.plan.price,
+                      currency: membershipSubscription.plan.currency,
+                      status: membershipSubscription.status,
+                      startDate: membershipSubscription.startDate,
+                      endDate: membershipSubscription.endDate,
+                      activeUntil: membershipSubscription.endDate,
+                      autoRenew: membershipSubscription.autoRenew,
+                      isActive: membershipSubscription.endDate
+                          ? new Date() < membershipSubscription.endDate
+                          : true,
+                  }
+                : null,
+            apps: appSubscriptions.map((sub) => ({
                 id: sub.id,
                 appId: sub.appId,
                 appName: sub.app.name,
@@ -90,9 +94,14 @@ export default async (userId: string) => {
                 isActive: new Date() < sub.endDate,
             })),
             summary: {
-                totalActiveSubscriptions: appSubscriptions.length + (membershipSubscription ? 1 : 0),
-                membershipActive: !!membershipSubscription && (membershipSubscription.endDate ? new Date() < membershipSubscription.endDate : true),
-                appsActive: appSubscriptions.filter(sub => new Date() < sub.endDate).length,
+                totalActiveSubscriptions:
+                    appSubscriptions.length + (membershipSubscription ? 1 : 0),
+                membershipActive:
+                    !!membershipSubscription &&
+                    (membershipSubscription.endDate
+                        ? new Date() < membershipSubscription.endDate
+                        : true),
+                appsActive: appSubscriptions.filter((sub) => new Date() < sub.endDate).length,
             },
         };
 

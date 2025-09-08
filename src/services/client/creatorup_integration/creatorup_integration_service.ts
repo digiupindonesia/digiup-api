@@ -281,9 +281,8 @@ class CreatorUpIntegrationService {
                 try {
                     // Retry logic based on event type
                     switch (event.eventType) {
-                        case 'user_sync':
+                        case 'user_sync': {
                             // Retry user sync
-                            const userData = event.payload as any;
                             const user = await prisma.user.findUnique({
                                 where: { id: event.userId || undefined },
                             });
@@ -305,6 +304,7 @@ class CreatorUpIntegrationService {
                                 });
                             }
                             break;
+                        }
 
                         default:
                             logger.warn(`Unknown event type for retry: ${event.eventType}`);

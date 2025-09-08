@@ -8,7 +8,11 @@ const prisma = new PrismaClient();
 /**
  * Get all users with CreatorUp credentials
  */
-const getAllCreatorUpUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+const getAllCreatorUpUsers = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+): Promise<void> => {
     try {
         const users = await prisma.user.findMany({
             where: {
@@ -37,7 +41,7 @@ const getAllCreatorUpUsers = async (req: Request, res: Response, next: NextFunct
         });
 
         // Format response with CreatorUp credentials
-        const formattedUsers = users.map(user => {
+        const formattedUsers = users.map((user) => {
             const metadata = user.creatorup_metadata as any;
             return {
                 digiup_user_id: user.id,
@@ -72,7 +76,11 @@ const getAllCreatorUpUsers = async (req: Request, res: Response, next: NextFunct
 /**
  * Get specific user CreatorUp credentials by DigiUp user ID
  */
-const getCreatorUpUserById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+const getCreatorUpUserById = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+): Promise<void> => {
     try {
         const { userId } = req.params;
 
@@ -134,7 +142,11 @@ const getCreatorUpUserById = async (req: Request, res: Response, next: NextFunct
 /**
  * Get CreatorUp credentials summary
  */
-const getCreatorUpSummary = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+const getCreatorUpSummary = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+): Promise<void> => {
     try {
         const totalUsers = await prisma.user.count();
         const creatorUpUsers = await prisma.user.count({
@@ -163,7 +175,8 @@ const getCreatorUpSummary = async (req: Request, res: Response, next: NextFuncti
                 creatorup_registered_users: creatorUpUsers,
                 creatorup_synced_users: syncedUsers,
                 creatorup_pending_users: registeredUsers,
-                registration_percentage: totalUsers > 0 ? ((creatorUpUsers / totalUsers) * 100).toFixed(2) : 0,
+                registration_percentage:
+                    totalUsers > 0 ? ((creatorUpUsers / totalUsers) * 100).toFixed(2) : 0,
             },
         });
     } catch (error: any) {
