@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import userAuthRoute from './user_auth_route';
 import userMeRoute from './user_me_route';
+import userSubscriptionRoute from './user_subscription_route';
 import creatorupRoute from './creatorup_route';
 import membershipRoute from './membership_route';
 import batchRoute from './batch_route';
@@ -17,6 +18,10 @@ const defaultRoutes = [
     {
         path: '/user/me',
         route: userMeRoute,
+    },
+    {
+        path: '/user/subscription',
+        route: userSubscriptionRoute,
     },
     {
         path: '/creatorup',
