@@ -14,7 +14,7 @@ const getAllCreatorUpUsers = async (req: Request, res: Response, next: NextFunct
             where: {
                 creatorup_metadata: {
                     not: null,
-                },
+                } as any,
                 sync_status: {
                     in: ['registered', 'synced'],
                 },
@@ -141,7 +141,7 @@ const getCreatorUpSummary = async (req: Request, res: Response, next: NextFuncti
             where: {
                 creatorup_metadata: {
                     not: null,
-                },
+                } as any,
             },
         });
         const syncedUsers = await prisma.user.count({

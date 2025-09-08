@@ -55,6 +55,14 @@ export default {
         };
         return { httpStatusCode: 422, data: params };
     },
+    http403(customMsg: string, error?: any) {
+        const params = {
+            success: false,
+            message: customMsg || 'Forbidden',
+            error: error || null,
+        };
+        return { httpStatusCode: 403, data: params };
+    },
     http400(customMsg: string, error?: any) {
         const params = {
             success: false,

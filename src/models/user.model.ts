@@ -7,6 +7,7 @@ export interface User {
     accountName: string | null;
     accountLocationState: string | null;
     accountType: string;
+    role: string;
     google_signin: boolean;
     google_given_name: string | null;
     google_family_name: string | null;
