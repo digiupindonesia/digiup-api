@@ -71,6 +71,7 @@ export class CreatorUpCredentialsService {
                     id: true,
                     email: true,
                     name: true,
+                    phone: true,
                     creatorup_metadata: true,
                     sync_status: true,
                 },
