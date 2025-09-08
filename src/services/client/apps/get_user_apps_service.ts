@@ -1,6 +1,9 @@
 import httpMsg from '@utils/http_messages/http_msg';
 import findAll from '@dao/apps/app_get_all_dao';
 import CreatorUpCredentialsService from '@services/client/creatorup_integration/creatorup_credentials_service';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 const errCode = 'ERROR_USER_APPS_GET_ALL';
 const msgError = 'Failed to get user apps';
@@ -37,6 +40,41 @@ export default async (userId: string, category?: string) => {
             return httpMsg.http422(msgError, errCode);
         }
 
+        // Get user app subscriptions
+        const userSubscriptions = await prisma.appSubscription.findMany({
+            where: {
+                userId: userId,
+                status: 'active',
+            },
+            include: {
+                plan: {
+                    select: {
+                        name: true,
+                        price: true,
+                        currency: true,
+                        billingCycle: true,
+                    },
+                },
+            },
+        });
+
+        // Create subscription map for quick lookup
+        const subscriptionMap = new Map();
+        userSubscriptions.forEach(sub => {
+            subscriptionMap.set(sub.appId, {
+                id: sub.id,
+                planName: sub.plan.name,
+                price: sub.plan.price,
+                currency: sub.plan.currency,
+                billingCycle: sub.plan.billingCycle,
+                startDate: sub.startDate,
+                endDate: sub.endDate,
+                activeUntil: sub.endDate,
+                autoRenew: sub.autoRenew,
+                isActive: new Date() < sub.endDate,
+            });
+        });
+
         // Check CreatorUp registration status
         const credentialsService = new CreatorUpCredentialsService();
         const isCreatorUpRegistered = await credentialsService.hasCredentials(userId);
@@ -47,18 +85,25 @@ export default async (userId: string, category?: string) => {
             const isCreatorUpApp = app.name.toLowerCase().includes('creator') || 
                                  app.name.toLowerCase().includes('creatorup');
 
+            // Get subscription data for this app
+            const subscription = subscriptionMap.get(app.id);
+
             if (isCreatorUpApp) {
                 return {
                     ...app,
                     isUserOwned: isCreatorUpRegistered,
                     userStatus: isCreatorUpRegistered ? 'registered' : 'not_registered',
+                    subscription: subscription || null,
+                    activeUntil: subscription?.activeUntil || null,
                 };
             }
 
             return {
                 ...app,
-                isUserOwned: false,
-                userStatus: 'available',
+                isUserOwned: !!subscription,
+                userStatus: subscription ? 'subscribed' : 'available',
+                subscription: subscription || null,
+                activeUntil: subscription?.activeUntil || null,
             };
         });
 
